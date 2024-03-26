@@ -12,7 +12,7 @@ import { getOperationAST } from 'graphql';
 import { invariant } from 'ts-invariant';
 import { IClientState } from '@common-stack/client-core';
 import fetch from 'node-fetch';
-import { isBoolean, merge } from 'lodash';
+import { isBoolean, merge } from 'lodash-es';
 import { CdmLogger } from '@cdm-logger/core';
 import { RetryLink } from '@apollo/client/link/retry';
 import { createClient } from 'graphql-ws';
