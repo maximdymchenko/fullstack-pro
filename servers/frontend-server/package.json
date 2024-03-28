@@ -109,6 +109,7 @@
     },
     "devDependencies": {
         "@babel/polyfill": "7.12.1",
+        "@common-stack/vite-routes-plugin": "3.0.3-alpha.9",
         "@loadable/babel-plugin": "^5.16.1",
         "@remix-run/dev": "^2.8.1",
         "@types/compression": "^1.7.5",

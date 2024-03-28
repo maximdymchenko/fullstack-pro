@@ -6,7 +6,7 @@ export const commonPageStore: any[] = [
     {
         path: '/',
         key: 'home',
-        exact: true,
+        exact: false,
         name: 'Home',
         component: () => import('../common/components/Home'),
         position: IMenuPosition.MIDDLE,
