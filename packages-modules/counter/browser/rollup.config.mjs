@@ -5,6 +5,7 @@ import { string } from 'rollup-plugin-string';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import generateJsonFromObject from './generate-json-from-object-plugin.mjs';
+import modifyLibFilesPlugin from './modifyLibFilesPlugin.mjs';
 
 const bundle = (config) => ({
     ...config,
@@ -31,10 +32,12 @@ export default [
                 include: '**/*.graphql',
             }),
             typescript({ noEmitOnError: true }),
+            modifyLibFilesPlugin({
+                include: ['**/**/compute.js'], // Adjust to target specific files or patterns
+                outputDir: 'lib', // Ensure this matches your actual output directory
+            }),
             generateJsonFromObject({
-                // include: ['src/**/*.tsx'], // Adjust this pattern to match your files
-                // You can also exclude files if necessary
-              }),
+            }),
         ],
         output: [
             {
