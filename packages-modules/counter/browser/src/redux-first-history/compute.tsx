@@ -6,15 +6,15 @@ import { CONNECTED_REACT_ROUTER_ROUTES_TYPES } from './constants';
 
 
 export const counterPageStore = [
-    {
-        exact: false,
-        icon: 'export',
-        component: () => import('../common/components/Dashboard'),
-        position: IMenuPosition.MIDDLE,
-        name: 'Redux First History',
-        key: CONNECTED_REACT_ROUTER_ROUTES_TYPES.HOME,
-        path: CONNECTED_REACT_ROUTER_ROUTES_TYPES.HOME,
-    },
+    // {
+    //     exact: false,
+    //     icon: 'export',
+    //     component: () => import('../common/components/Dashboard'),
+    //     position: IMenuPosition.MIDDLE,
+    //     name: 'Redux First History',
+    //     key: CONNECTED_REACT_ROUTER_ROUTES_TYPES.HOME,
+    //     path: CONNECTED_REACT_ROUTER_ROUTES_TYPES.HOME,
+    // },
     {
         exact: true,
         icon: 'export',
