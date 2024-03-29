@@ -11,7 +11,6 @@ export const emotionPageStore: any[] = [
         name: 'Emotion Styling',
         component: () => import('./components/CompledWithTheme'),
         path: '/emotion',
-        file: './components/CompledWithTheme'
     },
 ];
 

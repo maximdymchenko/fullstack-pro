@@ -14,7 +14,6 @@ export const counterPageStore = [
         name: 'Redux First History',
         key: CONNECTED_REACT_ROUTER_ROUTES_TYPES.HOME,
         path: CONNECTED_REACT_ROUTER_ROUTES_TYPES.HOME,
-        file: '../common/components/Dashboard',
     },
     {
         exact: true,
@@ -24,7 +23,6 @@ export const counterPageStore = [
         position: IMenuPosition.MIDDLE,
         key: CONNECTED_REACT_ROUTER_ROUTES_TYPES.HELLO,
         path: CONNECTED_REACT_ROUTER_ROUTES_TYPES.HELLO,
-        file: './components/Hello',
     },
     {
         exact: true,
@@ -34,7 +32,6 @@ export const counterPageStore = [
         position: IMenuPosition.MIDDLE,
         key: CONNECTED_REACT_ROUTER_ROUTES_TYPES.COUNTER,
         path: CONNECTED_REACT_ROUTER_ROUTES_TYPES.COUNTER,
-        file: './components/Counter',
     },
 ];
 

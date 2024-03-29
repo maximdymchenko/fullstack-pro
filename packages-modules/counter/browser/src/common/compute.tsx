@@ -11,7 +11,6 @@ export const commonPageStore: any[] = [
         component: () => import('../common/components/Home'),
         wrapper: () => import('../common/components/Wrapper'),
         position: IMenuPosition.MIDDLE,
-        file: '../common/components/Home',
     },
 ];
 
