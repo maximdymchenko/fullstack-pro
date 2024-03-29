@@ -9,13 +9,7 @@ import modifyLibFilesPlugin from './modifyLibFilesPlugin.mjs';
 
 const bundle = (config) => ({
     ...config,
-    input: [
-        './src/index.ts',
-        './src/redux-first-history/compute.tsx',
-        './src/apollo-server-n-client/compute.tsx',
-        './src/common/compute.tsx',
-        './src/redux-first-history/compute.tsx',
-    ],
+    input: ['./src/index.ts'],
     // marking all node modules as external
     external: (id) => !/^[./]/.test(id),
 });
