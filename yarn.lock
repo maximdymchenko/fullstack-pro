@@ -912,7 +912,7 @@
     "@jridgewell/trace-mapping" "^0.3.17"
     jsesc "^2.5.1"
 
-"@babel/generator@^7.18.13", "@babel/generator@^7.21.5", "@babel/generator@^7.24.1":
+"@babel/generator@^7.18.13", "@babel/generator@^7.20.1", "@babel/generator@^7.21.5", "@babel/generator@^7.24.1":
   version "7.24.1"
   resolved "https://registry.yarnpkg.com/@babel/generator/-/generator-7.24.1.tgz#e67e06f68568a4ebf194d1c6014235344f0476d0"
   integrity sha512-DfCRfZsBcrPEHUfuBMgbJ1Ut01Y/itOs+hY2nFLgqsqXd52/iSiVq5TITtUasIUgm+IIKdY2/1I7auiQOEeC9A==
@@ -1213,7 +1213,7 @@
   resolved "https://registry.yarnpkg.com/@babel/parser/-/parser-7.23.0.tgz#da950e622420bf96ca0d0f2909cdddac3acd8719"
   integrity sha512-vvPKKdMemU85V9WE/l5wZEmImpCtLqbnTvqDS2U1fJ96KrxoW7KrXhNsNCblQlg8Ck4b85yxdTyelsMUgFUXiw==
 
-"@babel/parser@^7.16.8", "@babel/parser@^7.21.8", "@babel/parser@^7.24.0", "@babel/parser@^7.24.1":
+"@babel/parser@^7.16.8", "@babel/parser@^7.20.1", "@babel/parser@^7.21.8", "@babel/parser@^7.24.0", "@babel/parser@^7.24.1":
   version "7.24.1"
   resolved "https://registry.yarnpkg.com/@babel/parser/-/parser-7.24.1.tgz#1e416d3627393fab1cb5b0f2f1796a100ae9133a"
   integrity sha512-Zo9c7N3xdOIQrNip7Lc9wvRPzlRtovHVE4lkz8WEDr7uYh/GMQhSiIgFxGIArRHYdJE5kxtZjAf8rT0xhdLCzg==
@@ -2257,7 +2257,7 @@
     debug "^4.1.0"
     globals "^11.1.0"
 
-"@babel/traverse@^7.16.8", "@babel/traverse@^7.24.1":
+"@babel/traverse@^7.16.8", "@babel/traverse@^7.20.1", "@babel/traverse@^7.24.1":
   version "7.24.1"
   resolved "https://registry.yarnpkg.com/@babel/traverse/-/traverse-7.24.1.tgz#d65c36ac9dd17282175d1e4a3c49d5b7988f530c"
   integrity sha512-xuU6o9m68KeqZbQuDt2TcKSxUw/mrsvavlEqQ1leZ/B+C9tk6E4sRWy97WaXgvq5E+nU3cXMxv3WKOCanVMCmQ==
@@ -34831,16 +34831,6 @@ vite-node@^1.2.0:
     pathe "^1.1.1"
     picocolors "^1.0.0"
     vite "^5.0.0"
-
-vite-plugin-babel@^1.2.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/vite-plugin-babel/-/vite-plugin-babel-1.2.0.tgz#0d803d489c2a7e63ceb93e37533de298e1537c71"
-  integrity sha512-ltAnq535Ubf9sDbVCkztAdkwx5aQbNrwPFs+iZTJ5FaAhTdxjqmLGpxsAaRfJWEKBJ/kFf9KwMoTdArm0IRUUw==
-
-vite-plugin-codegen@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/vite-plugin-codegen/-/vite-plugin-codegen-1.1.1.tgz#a7ee1e48414fc2a6c18e86da26c542561dbf3cb6"
-  integrity sha512-wX3ZGmVM75VQuiQwuGR/sQq3CAPsE96yGb/cNyooKNHFGp82Vyzi522Z9fpNdKXeST71RJvRfdOqKXUtuGDBUA==
 
 vite-tsconfig-paths@^4.2.1:
   version "4.3.2"
