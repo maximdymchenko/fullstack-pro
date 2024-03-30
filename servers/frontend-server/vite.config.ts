@@ -17,20 +17,22 @@ const directoryName = dirname(fileURLToPath(import.meta.url));
 console.log('--_VIET BASE ', process.cwd());
 
 export default defineConfig({
-    plugins: [
-        // routesGeneratorPlugin({
-        //     routesFileName: 'compute.json',
-        //     packages: ['@common-stack/counter-module-browser'],
-        // }),
-        remix({
-            appDirectory: 'src',
-            routes: async (defineRoutes) =>
-                defineRoutesConfig(defineRoutes, {
-                    routesFileName: 'routes.json',
-                    packages: ['@sample-stack/counter-module-browser'],
-                    rootPath: resolve(directoryName, '../..'),
-                }),
-        }),
-        tsconfigPaths({ ignoreConfigErrors: true }),
-    ],
+  plugins: [
+    // routesGeneratorPlugin({
+    //     routesFileName: 'compute.json',
+    //     packages: ['@common-stack/counter-module-browser'],
+    // }),
+    remix({
+      appDirectory: 'src',
+      routes: async (defineRoutes) =>
+        defineRoutes((routeFn) => {
+          defineRoutesConfig(routeFn, {
+            routesFileName: 'routes.json',
+            packages: ['@sample-stack/counter-module-browser'],
+            rootPath: resolve(directoryName, '../..'),
+          })
+        })
+    }),
+    tsconfigPaths({ ignoreConfigErrors: true }),
+  ],
 });

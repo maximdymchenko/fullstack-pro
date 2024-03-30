@@ -1,10 +1,10 @@
+import { getSortedRoutes } from '@common-stack/client-react/lib/route/get-routes.js';
 import fs from 'fs';
-import _ from 'lodash';
 import globAll from 'glob-all';
+import _ from 'lodash';
+import { union, without } from 'lodash-es';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { without, union } from 'lodash-es';
-import { getSortedRoutes } from '@common-stack/client-react/lib/route/get-routes.js';
 const combine = (routes) => without(union(routes), undefined);
 
 function getRootPath() {
@@ -110,10 +110,9 @@ function defineRoute(routeFn, jsonRoute) {
         routeFn(path, file, opts);
     }
 }
+
 export function defineRoutesConfig(routeFn, options) {
     const jsonRoute = loadRoutesConfig(options);
     console.log('----JSON ROUTE', jsonRoute)
-    const definedRoutes =  defineRoute(routeFn, jsonRoute[0]);
-    console.log('_--JSON DEFINED ROUTES', JSON.stringify(definedRoutes.stringify()))
-    return definedRoutes;
+    defineRoute(routeFn, jsonRoute[0]);
 }
