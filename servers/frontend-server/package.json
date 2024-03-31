@@ -105,7 +105,8 @@
         "serialize-javascript": "^4.0.0",
         "sourcemapped-stacktrace": "^1.1.11",
         "ts-invariant": "^0.10.3",
-        "universal-cookie-express": "^4.0.1"
+        "universal-cookie-express": "^4.0.1",
+        "uuid": "^9.0.1"
     },
     "devDependencies": {
         "@babel/polyfill": "7.12.1",
