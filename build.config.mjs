@@ -1,6 +1,6 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable no-underscore-dangle */
-import { config as dotenvConfig } from 'dotenv';
+import { config as dotenvConfig } from 'dotenv-esm';
 
 if (process.env.ENV_FILE !== null) {
     dotenvConfig({ path: process.env.ENV_FILE });
