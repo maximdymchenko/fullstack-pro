@@ -65,6 +65,7 @@
         "classnames": "^2.2.6",
         "compression": "^1.7.4",
         "cors": "^2.8.5",
+        "cross-fetch": "4.0.0",
         "dotenv": "^8.2.0",
         "envalid": "~7.2.2",
         "error-stack-parser": "^2.0.4",
