@@ -72,7 +72,7 @@ function defineRoute(routeFn, jsonRoute) {
     const { routes = null, path, file: componentFile, ...rest } = jsonRoute;
     console.log('---GIVEN JSON ---', jsonRoute)
     const fileRootPath = getRootPath();
-    const rootPath = resolve(fileRootPath, '..', '..')
+    const rootPath = '../../..' 
     let file = `${rootPath}/node_modules/${componentFile}`
     console.log('---FILE-', file);
     let opts = { ...rest, id: uuid()};

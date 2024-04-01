@@ -26,6 +26,11 @@ export default env;
 if (isBrowser) {
     process[lowerCase('env')] = env; // to avoid webpack to replace `process` with actual value.
     process.APP_ENV = env;
+    window.__CLIENT__ = true;
+    window.__SERVER__ = false;
+} else {
+    global.__CLIENT__ = false;
+    global.__SERVER__ = true;
 }
 
 try {

@@ -1,5 +1,6 @@
 import 'reflect-metadata';
-
+global.__CLIENT__ = false;
+global.__SERVER__ = true;
 import { PassThrough } from "node:stream";
 import * as React from 'react';
 import * as ReactDOMServer from 'react-dom/server';
