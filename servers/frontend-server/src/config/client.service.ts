@@ -9,7 +9,7 @@ import { CdmLogger } from '@cdm-logger/core';
 import { merge } from 'lodash-es';
 import modules, { UtilityClass, logger } from '../modules';
 import { createApolloClient } from './base-apollo-client';
-import { PUBLIC_SETTINGS } from './public-config';
+import { config } from './browser-env-config';
 
 let __CLIENT_SERVICE__: {
     apolloClient: ApolloClient<any>;
@@ -53,8 +53,8 @@ export const createClientContainer = (req?: any, res?: any) => {
         }
     });
     const { apolloClient, cache } = createApolloClient({
-        httpGraphqlURL: PUBLIC_SETTINGS.GRAPHQL_URL,
-        httpLocalGraphqlURL: PUBLIC_SETTINGS.LOCAL_GRAPHQL_URL as any,
+        httpGraphqlURL: config.GRAPHQL_URL,
+        httpLocalGraphqlURL: config.LOCAL_GRAPHQL_URL as any,
         isDev: process.env.NODE_ENV === 'development',
         isDebug: __DEBUGGING__,
         isSSR: __SSR__,

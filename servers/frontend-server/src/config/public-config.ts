@@ -24,8 +24,12 @@ for (const v of publicEnv) {
 export default env;
 
 if (isBrowser) {
+    // process[lowerCase('env')] = env; // to avoid webpack to replace `process` with actual value.
+    // process.APP_ENV = env;
+    let process: any = {};
     process[lowerCase('env')] = env; // to avoid webpack to replace `process` with actual value.
     process.APP_ENV = env;
+    window.process = process;
     window.__CLIENT__ = true;
     window.__SERVER__ = false;
 } else {
@@ -42,8 +46,3 @@ try {
         'Encountered above issue while running "global.process = process", will automatically try again in next render',
     );
 }
-export const PUBLIC_SETTINGS: __PUBLIC_SETTINGS__ = {
-    GRAPHQL_URL: process.env.GRAPHQL_URL || env.GRAPHQL_URL || __GRAPHQL_URL__,
-    LOCAL_GRAPHQL_URL: process.env.LOCAL_GRAPHQL_URL || __GRAPHQL_URL__,
-    LOG_LEVEL: process.env.LOG_LEVEL || 'trace',
-};

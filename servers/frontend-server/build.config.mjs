@@ -1,11 +1,11 @@
-import { config as dotenvConfig } from 'dotenv';
+import { config as dotenvConfig } from 'dotenv-esm';
 
 let dotEnvResult;
 if (process.env.ENV_FILE !== null) {
     dotEnvResult = dotenvConfig({ path: process.env.ENV_FILE });
 }
 
-import buildConfig from '../../buildconfig.mjs';
+import buildConfig from '../../build.config.mjs';
 
 const config = {
     ...buildConfig,
