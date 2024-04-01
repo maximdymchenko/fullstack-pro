@@ -1,11 +1,11 @@
-import fs from 'fs';
-import _ from 'lodash';
-import globAll from 'glob-all';
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { without, union } from 'lodash-es';
 import { getSortedRoutes } from '@common-stack/client-react/lib/route/get-routes.js';
-const combine = (routes) => without(union(routes), undefined);
+import fs from 'fs';
+import globAll from 'glob-all';
+import _ from 'lodash';
+import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
+import { v4 as uuid } from 'uuid';
+
 
 function getRootPath() {
     const directoryName = dirname(fileURLToPath(import.meta.url));
@@ -67,33 +67,15 @@ export function jsonRoutes(defineRoutes, routes) {
     return defineRoutes((route) => routes.forEach((r) => defineRoute(route, r)));
 }
 
-function genFilePath(file, module){
-    // if (process.env.NODE_ENV === 'development') {
-    //   let link = dependencies[module];
-    //   let filePath = file;
-
-    //   if (link && link.startsWith('link:')) {
-    //     link = link.replace('link:', '');
-    //     filePath = filePath.replace(module, link);
-    //     filePath = '../' + filePath; // escape from src/
-    //   } else {
-    //     filePath = '../node_modules/' + filePath; // escape from src/, enter node_modules/
-    //   }
-    //   return filePath;
-    // }
-    return `../../../node_modules/${module}${file}`; // servers/frontend-server/src
-}
 
 function defineRoute(routeFn, jsonRoute) {
+    const { routes = null, path, file: componentFile, ...rest } = jsonRoute;
     console.log('---GIVEN JSON ---', jsonRoute)
-    let path = jsonRoute.path;
-    let file = genFilePath(jsonRoute.file, jsonRoute.module);
+    const fileRootPath = getRootPath();
+    const rootPath = resolve(fileRootPath, '..', '..')
+    let file = `${rootPath}/node_modules/${componentFile}`
     console.log('---FILE-', file);
-    const { routes = null, ...rest } = jsonRoute;
-    // let routes = jsonRoute.routes;
-    let opts = { ...rest };
-    delete opts.path;
-    delete opts.file;
+    let opts = { ...rest, id: uuid()};
     console.log(`
     --------------
     file: ${file}
@@ -106,14 +88,14 @@ function defineRoute(routeFn, jsonRoute) {
             routes.forEach((c) => defineRoute(routeFn, c));
         });
     } else {
-
         routeFn(path, file, opts);
     }
 }
+
 export function defineRoutesConfig(routeFn, options) {
     const jsonRoute = loadRoutesConfig(options);
     console.log('----JSON ROUTE', jsonRoute)
-    const definedRoutes =  defineRoute(routeFn, jsonRoute[0]);
-    console.log('_--JSON DEFINED ROUTES', JSON.stringify(definedRoutes.stringify()))
-    return definedRoutes;
+    jsonRoute.forEach((item) => {
+        defineRoute(routeFn, item);
+    })
 }
