@@ -27,8 +27,8 @@
         "docker:build:debug": "yarn build:debug && docker build . -t $npm_package_name:$npm_package_version",
         "docker:run": "docker run  --env-file ../../config/staging/docker-staging.env  -p 3010:3010  -it $npm_package_name:$npm_package_version",
         "jest": "./node_modules/.bin/jest",
-        "start:staging": "yarn build && cross-env NODE_ENV=production ENV_FILE=../../config/staging/staging.env tsx dist/index.js",
-        "start:test": "cross-env NODE_ENV=test ENV_FILE=../../config/test/test.env tsx dist/index.js",
+        "start:staging": "yarn build && cross-env NODE_ENV=production ENV_FILE=../../config/staging/staging.env node ./server.js",
+        "start:test": "cross-env NODE_ENV=test ENV_FILE=../../config/test/test.env node ./server.js",
         "test": "jest",
         "test:debug": "npm test -- --runInBand"
     },
