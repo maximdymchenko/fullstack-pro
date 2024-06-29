@@ -1,6 +1,6 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable no-underscore-dangle */
-import { config as dotenvConfig } from 'dotenv';
+import { config as dotenvConfig } from 'dotenv-esm';
 
 if (process.env.ENV_FILE !== null) {
     dotenvConfig({ path: process.env.ENV_FILE });
@@ -34,5 +34,4 @@ const config = {
         process.env.LOCAL_BACKEND_URL || `${__SERVER_PROTOCOL__}://${__LOCAL_SERVER_HOST__}:${__WEB_SERVER_PORT__}`,
 };
 
-console.log('---CONFIG', config);
 export default config;
