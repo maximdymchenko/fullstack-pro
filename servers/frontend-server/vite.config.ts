@@ -1,60 +1,64 @@
+import { defineConfig } from 'vite';
 import { vitePlugin as remix } from '@remix-run/dev';
 import { dirname, resolve } from 'path';
-import { fileURLToPath } from 'url';
-import { defineConfig } from 'vite';
+import dotenv from 'dotenv-esm';
+import { installGlobals } from '@remix-run/node';
+import { defineRoutesConfig } from '@common-stack/rollup-vite-utils/lib/vite-wrappers/json-wrappers.js';
 import tsconfigPaths from 'vite-tsconfig-paths';
-// import routesGeneratorPlugin from '@common-stack/vite-routes-plugin';
-import dotenv from 'dotenv';
-import buildConfig from './build.config.mjs';
-import { loadRoutesConfig, defineRoutesConfig } from './json-wrapper';
-// import { generateRemixRoutes } from './src/routes';
+import { i18nInternationalizationPlugin } from '@common-stack/rollup-vite-utils/lib/vite-plugins/i18n-internationalization-plugin.js';
+import { performCopyOperations, config, loadEnvConfig, directoryName, buildConfig } from './common-config.js';
+import virtualImportsPlugin from './vite-plugin-virutal-imports';
 
-const directoryName = dirname(fileURLToPath(import.meta.url));
-// loadRoutesConfig({
-//     routesFileName: 'routes.json',
-//     packages: ['@sample-stack/counter-module-browser'],
-//     rootPath: resolve(directoryName, '../..'),
-// });
-console.log('--_VIET BASE ', process.cwd());
+// This installs globals such as "fetch", "Response", "Request" and "Headers".
+installGlobals();
+
+const packages: string[] = config.modules;
 
 export default defineConfig(({ isSsrBuild }) => {
-    console.log('---IS SSR BUILD', isSsrBuild, process.env);
+    console.log('---IS SSR BUILD', isSsrBuild);
 
-    let dotEnvResult;
-    if (process.env.NODE_ENV !== 'production') {
-        dotEnvResult = dotenv.config({ path: resolve(__dirname, process.env.ENV_FILE) });
-        if (dotEnvResult.error) {
-            throw dotEnvResult.error;
-        }
-    }
+    const dotEnvResult = loadEnvConfig();
+
     return {
         define: {
             __ENV__: JSON.stringify(dotEnvResult?.parsed),
             ...Object.assign(
                 ...Object.entries(buildConfig).map(([k, v]) => ({
                     [k]: typeof v !== 'string' ? v : `"${v.replace(/\\/g, '\\\\')}"`,
-                    // __SSR__: process.env.SSR === 'true',
-                    // __CLIENT__: !isSsrBuild,
-                })),
+                    __SERVER__: true,
+                    __CLIENT__: false,
+                }))
             ),
         },
         plugins: [
-            // routesGeneratorPlugin({
-            //     routesFileName: 'compute.json',
-            //     packages: ['@common-stack/counter-module-browser'],
-            // }),
+            virtualImportsPlugin(),
+            i18nInternationalizationPlugin({
+                folderName: 'cdm-locales',
+                packages: config.modules,
+                namespaceResolution: 'basename',
+            }),
             remix({
                 appDirectory: 'src',
-                routes: async (defineRoutes) =>
-                    defineRoutes((routeFn) => {
+                routes: async (defineRoutes) => {
+                    if (process.env.NODE_ENV === 'production') {
+                        await performCopyOperations();
+                    }
+                    const metaJson = await import('./app/sync-meta.json').catch(() => null);
+                    return defineRoutes((routeFn) => {
                         defineRoutesConfig(routeFn, {
                             routesFileName: 'routes.json',
-                            packages: ['@sample-stack/counter-module-browser'],
+                            packages: packages,
                             rootPath: resolve(directoryName, '../..'),
-                        });
-                    }),
+                        }, metaJson);
+                    });
+                },
             }),
             tsconfigPaths({ ignoreConfigErrors: true }),
         ],
+        resolve: {
+            alias: {
+                '@app': resolve(__dirname, 'app'),
+            },
+        },
     };
 });

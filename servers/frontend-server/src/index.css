@@ -1,0 +1,21 @@
+@import "//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap-grid.min.css";
+/* @import "//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css"; */
+
+body {
+    margin: 0;
+    min-height: 100%;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.SiderMenu.ant-layout-sider-collapsed .cde-username {
+    display: none;
+}
+
+.SiderMenu.ant-layout-sider-collapsed #sign_in {
+    text-align: center;
+    padding-left: 5px !important;
+    padding-right: 5px !important;
+}

@@ -1,0 +1,16 @@
+{
+  "commonPaths": {
+    "appPath": "app",
+    "frontendStackPath": "frontend-stack-react"
+  },
+  "copyOperations": [
+    {
+      "packageName": "@common-stack/frontend-stack-react",
+      "destPath": "$.commonPaths.frontendStackPath",
+      "generateModule": true
+    }
+  ],
+  "modules": [
+    "@sample-stack/counter-module-browser"
+  ]
+}

@@ -1,16 +1,7 @@
 {
-  "exclude": [
-    "node_modules",
-    "lib",
-    "dist",
-    "webpack.config.js",
-    "rollup.config.js",
-  ],
   "include": [
-    "env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "**/*.codegen",
     "**/.server/**/*.ts",
     "**/.server/**/*.tsx",
     "**/.client/**/*.ts",
@@ -37,6 +28,5 @@
 
     // Vite takes care of building everything, not tsc.
     "noEmit": true
-  },
-  "skipLibCheck": true
+  }
 }
