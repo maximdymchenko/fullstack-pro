@@ -1,5 +1,12 @@
 *
+!app/
+!public/
+!tools/
 !dist/
+!build/
+!server.ts
+!src
+!build.config.mjs
 !*.js
 !*.json
 !.npmrc

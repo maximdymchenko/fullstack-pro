@@ -3,31 +3,18 @@
     "default": {
       "runner": "nx/tasks-runners/default",
       "options": {
-        "cacheableOperations": [
-          "build"
-        ]
+        "cacheableOperations": ["build"],
+        "runtimeCacheInputs": ["node --version"]
       }
     }
   },
-  "namedInputs": {
-    "adminide": [
-      "{projectRoot}/packages/**/*",
-      "{projectRoot}/packages-modules/**/*"
-    ]
-  },
   "targetDefaults": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "inputs": [
-        "adminide"
-      ]
+      "dependsOn": ["^build"],
+      "inputs": ["default", "^default", "{projectRoot}/src/**/*"]
     },
     "test": {
-      "dependsOn": [
-        "build"
-      ]
+      "dependsOn": ["build"]
     }
   }
 }
