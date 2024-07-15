@@ -4,20 +4,18 @@ import { createRequestHandler } from '@remix-run/express';
 import { installGlobals } from '@remix-run/node';
 import './env.js';
 import {
-    directoryName,
     performCopyOperations,
-    buildConfig,
-    config
-} from './common-config.js';
+} from '@common-stack/rollup-vite-utils/lib/preStartup/configLoader/configLoader.js';
+import config from './app/cde-webconfig.json' assert { type: 'json' };
 
 installGlobals();
 
-Object.keys(buildConfig).forEach((key) => {
-    global[key] = buildConfig[key];
+Object.keys(config.buildConfig).forEach((key) => {
+    global[key] = config.buildConfig[key];
 });
 
 const startServer = async () => {
-    await performCopyOperations();
+    await performCopyOperations(config);
 
     const { corsMiddleware } = await import(`./${config.commonPaths.appPath}/${config.commonPaths.frontendStackPath}/backend/middlewares/cors.js`);
     const { containerMiddleware } = await import(`./${config.commonPaths.appPath}/${config.commonPaths.frontendStackPath}/backend/middlewares/container.js`);

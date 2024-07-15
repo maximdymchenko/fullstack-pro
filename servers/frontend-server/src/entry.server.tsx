@@ -3,17 +3,17 @@
  * You are free to delete this file if you'd like to, but if you ever want it revealed again, you can run `npx remix reveal` ✨
  * For more information, see https://remix.run/file-conventions/entry.server
  */
-import 'reflect-metadata';
-global.__CLIENT__ = false;
-global.__SERVER__ = true;
+import * as React from 'react';
+(global as any).__CLIENT__ = false;
+(global as any).__SERVER__ = true;
 import { PassThrough, Transform } from 'node:stream';
-import type { AppLoadContext, EntryContext } from '@remix-run/node';
+import type { EntryContext } from '@remix-run/node';
 import { createReadableStreamFromReadable } from '@remix-run/node';
 import { RemixServer } from '@remix-run/react';
 import { isbot } from 'isbot';
 import { ApolloProvider } from '@apollo/client/index.js';
 import { SlotFillProvider } from '@common-stack/components-pro';
-import { InversifyProvider, PluginArea } from '@common-stack/client-react';
+import { InversifyProvider } from '@common-stack/client-react';
 import { renderToPipeableStream } from 'react-dom/server';
 import { Provider as ReduxProvider } from 'react-redux';
 import { LOCATION_CHANGE } from '@common-stack/remix-router-redux';
@@ -21,13 +21,16 @@ import serialize from 'serialize-javascript';
 import { createCache as createAntdCache, extractStyle, StyleProvider } from '@ant-design/cssinjs';
 import { CacheProvider } from '@emotion/react';
 import { renderStylesToNodeStream } from '@emotion/server';
-import createEmotionCache from './common/createEmotionCache';
-import { createInstance } from "i18next";
-import i18next from "../i18n-configuration/i18next-server";
-import { I18nextProvider, initReactI18next } from "react-i18next";
-import Backend from "i18next-fs-backend";
-import i18n from "../i18n-configuration/i18n"; // your i18n configuration file
-import { resolve } from "node:path";
+import { createInstance } from 'i18next';
+import { I18nextProvider, initReactI18next } from 'react-i18next';
+import Backend from 'i18next-fs-backend';
+import { resolve } from 'node:path';
+// @ts-ignore
+import { i18nextInstance as i18next } from '@app/frontend-stack-react/i18n-localization/i18next.server.js';
+import config from '@app/cde-webconfig.json';
+// @ts-ignore
+import createEmotionCache from '@app/frontend-stack-react/entries/common/createEmotionCache';
+import type { IAppLoadContext } from '@common-stack/client-core';
 
 const ABORT_DELAY = 5_000;
 const antdCache = createAntdCache();
@@ -81,22 +84,30 @@ export default async function handleRequest(
     // This is ignored so we can keep it in the template for visibility.  Feel
     // free to delete this parameter in your app if you're not using it!
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    loadContext: AppLoadContext,
+    loadContext: IAppLoadContext,
 ) {
-
     const instance = createInstance();
     const lng = await i18next.getLocale(request);
     const ns = i18next.getRouteNamespaces(remixContext);
 
-    await instance
-        .use(initReactI18next) // Tell our instance to use react-i18next
-        .use(Backend) // Setup our backend
-        .init({
-            ...i18n, // spread the configuration
-            lng, // The locale we detected above
-            ns, // The namespaces the routes about to render wants to use
-            backend: { loadPath: resolve("./cdm-locales/{{lng}}/{{ns}}.json") },
-        });
+    // First, we create a new instance of i18next so every request will have a
+    // completely unique instance and not share any state.
+    if (config.i18n.enabled) {
+        await instance
+            .use(initReactI18next) // Tell our instance to use react-i18next
+            .use(Backend) // Setup our backend.init({
+            .init({
+                fallbackLng: config.i18n.fallbackLng,
+                defaultNS: config.i18n.defaultNS,
+                react: config.i18n.react,
+                supportedLngs: config.i18n.supportedLngs,
+                lng, // The locale we detected above
+                ns, // The namespaces the routes about to render want to use
+                backend: {
+                    loadPath: resolve(config.i18n.backend.loadServerPath),
+                },
+            });
+    }
 
     return isbot(request.headers.get('user-agent') || '')
         ? handleBotRequest(request, responseStatusCode, responseHeaders, remixContext, loadContext, instance)
@@ -108,8 +119,8 @@ function handleBotRequest(
     responseStatusCode: number,
     responseHeaders: Headers,
     remixContext: EntryContext,
-    loadContext: AppLoadContext,
-    i18nInstance: Record<string, unknown>
+    loadContext: IAppLoadContext,
+    i18nInstance: i18next,
 ) {
     return new Promise((resolve, reject) => {
         let shellRendered = false;
@@ -158,8 +169,8 @@ function handleBrowserRequest(
     responseStatusCode: number,
     responseHeaders: Headers,
     remixContext: EntryContext,
-    loadContext: AppLoadContext,
-    i18nInstance: Record<string, unknown>
+    loadContext: IAppLoadContext,
+    i18nInstance: i18next,
 ) {
     return new Promise((resolve, reject) => {
         let shellRendered = false;
@@ -169,7 +180,7 @@ function handleBrowserRequest(
             container,
             apolloClient: client,
             store,
-        }: AppLoadContext & { clientModules?: any; container?: any; client?: any; store?: any } = loadContext;
+        } = loadContext;
 
         const { pathname, search, hash } = new URL(request.url);
         store.dispatch({
@@ -184,7 +195,7 @@ function handleBrowserRequest(
                         <StyleProvider cache={antdCache}>
                             <ReduxProvider store={store}>
                                 <SlotFillProvider context={slotFillContext}>
-                                    <InversifyProvider container={container} modules={clientModules}>
+                                    <InversifyProvider container={container} modules={clientModules as any}>
                                         <ApolloProvider client={client}>
                                             <RemixServer
                                                 context={remixContext}

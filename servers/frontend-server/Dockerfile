@@ -1,5 +1,5 @@
 # The official nodejs docker image
-FROM node:18.18-bullseye
+FROM node:18.20-bullseye
 ENV PYTHON /usr/bin/python
 
 # Copy package.json only to temp folder, install its dependencies,

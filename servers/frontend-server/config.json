@@ -10,6 +10,25 @@
       "generateModule": true
     }
   ],
+  "i18n": {
+    "enabled": true,
+    "fallbackLng": "en",
+    "supportedLngs": [
+      "en",
+      "de",
+      "es"
+    ],
+    "defaultNS": "common",
+    "react": {
+      "useSuspense": false
+    },
+    "backend": {
+      "loadPath": "/cdm-locales/{{lng}}/{{ns}}.json",
+      "loadServerPath": "./public/cdm-locales/{{lng}}/{{ns}}.json"
+    },
+    "packages": [
+    ]
+  },
   "modules": [
     "@sample-stack/counter-module-browser"
   ]

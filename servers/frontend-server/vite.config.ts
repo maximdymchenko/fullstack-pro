@@ -1,29 +1,30 @@
 import { defineConfig } from 'vite';
 import { vitePlugin as remix } from '@remix-run/dev';
 import { dirname, resolve } from 'path';
-import dotenv from 'dotenv-esm';
 import { installGlobals } from '@remix-run/node';
+import { fileURLToPath } from 'url';
 import { defineRoutesConfig } from '@common-stack/rollup-vite-utils/lib/vite-wrappers/json-wrappers.js';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { i18nInternationalizationPlugin } from '@common-stack/rollup-vite-utils/lib/vite-plugins/i18n-internationalization-plugin.js';
-import { performCopyOperations, config, loadEnvConfig, directoryName, buildConfig } from './common-config.js';
-import virtualImportsPlugin from './vite-plugin-virutal-imports';
+import { performCopyOperations } from '@common-stack/rollup-vite-utils/lib/preStartup/configLoader/configLoader.js';
+import { loadEnvConfig } from '@common-stack/rollup-vite-utils/lib/preStartup/configLoader/envLoader.js';
+import { cjsInterop } from 'vite-plugin-cjs-interop';
+import config from './app/cde-webconfig.json'  assert { type: 'json' };
 
 // This installs globals such as "fetch", "Response", "Request" and "Headers".
 installGlobals();
-
-const packages: string[] = config.modules;
+const directoryName = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(({ isSsrBuild }) => {
     console.log('---IS SSR BUILD', isSsrBuild);
 
-    const dotEnvResult = loadEnvConfig();
+    const dotEnvResult = loadEnvConfig(directoryName);
 
     return {
         define: {
             __ENV__: JSON.stringify(dotEnvResult?.parsed),
             ...Object.assign(
-                ...Object.entries(buildConfig).map(([k, v]) => ({
+                ...Object.entries(config.buildConfig).map(([k, v]) => ({
                     [k]: typeof v !== 'string' ? v : `"${v.replace(/\\/g, '\\\\')}"`,
                     __SERVER__: true,
                     __CLIENT__: false,
@@ -31,23 +32,26 @@ export default defineConfig(({ isSsrBuild }) => {
             ),
         },
         plugins: [
-            virtualImportsPlugin(),
             i18nInternationalizationPlugin({
                 folderName: 'cdm-locales',
-                packages: config.modules,
+                packages: [...config.modules, ...config.i18n.packages],
                 namespaceResolution: 'basename',
+            }),
+            cjsInterop({
+                dependencies:["@apollo/client"]
             }),
             remix({
                 appDirectory: 'src',
                 routes: async (defineRoutes) => {
                     if (process.env.NODE_ENV === 'production') {
-                        await performCopyOperations();
+                        await performCopyOperations(config);
                     }
                     const metaJson = await import('./app/sync-meta.json').catch(() => null);
                     return defineRoutes((routeFn) => {
                         defineRoutesConfig(routeFn, {
                             routesFileName: 'routes.json',
-                            packages: packages,
+                            packages: config.modules,
+                            paths: config.paths,
                             rootPath: resolve(directoryName, '../..'),
                         }, metaJson);
                     });
@@ -56,8 +60,10 @@ export default defineConfig(({ isSsrBuild }) => {
             tsconfigPaths({ ignoreConfigErrors: true }),
         ],
         resolve: {
+            // preserveSymlinks: true,
             alias: {
                 '@app': resolve(__dirname, 'app'),
+                '@src': resolve(__dirname, 'src'),
             },
         },
     };
