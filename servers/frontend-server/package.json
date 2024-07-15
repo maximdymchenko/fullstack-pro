@@ -16,7 +16,7 @@
     "main": "index.js",
     "type": "module",
     "scripts": {
-        "prebuild": "yarn build:clean",
+        "prebuild": "yarn build:clean && yarn genconfig",
         "preview": "cross-env SSR=true NODE_ENV=development ENV_FILE=../../config/development/dev.env node ./server.js",
         "build": "cross-env SSR=true NODE_OPTIONS='--max_old_space_size=6096' NODE_ENV=production remix vite:build",
         "build:clean": "rimraf dist build node_modules/.vite",
