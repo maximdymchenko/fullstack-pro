@@ -38,7 +38,7 @@ pipeline {
     string(name: 'BUILD_TIME_OUT', defaultValue: '120', description: 'Build timeout in minutes', trim: true)
   }
 
-  // Setup common + secret key variables for pipeline.
+ // Setup common + secret key variables for pipeline.
   environment {
     BUILD_COMMAND = getBuildCommand()
     NAMESPACE = "${params.BASE_NAMESPACE}-${params.VERSION}"
@@ -415,29 +415,15 @@ pipeline {
         expression { params.SKIP_RELEASE_APPROVAL == false }
       }
       options {
-        // Optionally, let's add a timeout that we don't allow ancient
-        // builds to be released.
-        timeout time: 900, unit: 'SECONDS' 
+        timeout time: 900, unit: 'SECONDS'
       }
       steps {
-        // Optionally, send some notifications to the approver before
-        // asking for input. You can't do that with the input directive
-        // without using an extra stage.
         slackSend (color: '#2596BE', message: "Approval Needed for Production Release:  Job  '${env.JOB_NAME}'  BUILD NUMBER:  '${env.BUILD_NUMBER}'  to be approved. Click <${env.RUN_DISPLAY_URL}|here> to approve it.", channel: 'idestack-automation')
 
-        // The input statement has to go to a script block because we
-        // want to assign the result to an environment variable. As we 
-        // want to stay as declarative as possible, we put noting but
-        // this into the script block.
         script {
-          // Assign the 'DO_RELEASE' environment variable that is going
-          //  to be used in the next stage.
-          env.DO_RELEASE = input  message: 'Want to deploy fullstack-pro on prod cluster?',
-                                        parameters:[choice(choices:  ['yes', 'no'], description: 'Deploy branch in Production?', name: 'PROD_DEPLOYMENT')]
+          env.DO_RELEASE = input message: 'Want to deploy fullstack-pro on prod cluster?',
+                                    parameters: [choice(choices: ['yes', 'no'], description: 'Deploy branch in Production?', name: 'PROD_DEPLOYMENT')]
         }
-        // In case you approved multiple pipeline runs in parallel, this
-        // milestone would kill the older runs and prevent deploying
-        // older releases over newer ones.
         milestone 1
       }
     }
@@ -458,17 +444,8 @@ pipeline {
       }
 
       steps {
-        // Make sure that only one release can happen at a time.
         lock('release') {
-          // As using the first milestone only would introduce a race 
-          // condition (assume that the older build would enter the 
-          // milestone first, but the lock second) and Jenkins does
-          // not support inter-stage locks yet, we need a second 
-          // milestone to make sure that older builds don't overwrite
-          // newer ones.
           milestone 2
-          
-          // Now do the actual work here
           load "./jenkins_variables.groovy"
           withKubeConfig([credentialsId: 'kubernetes-prod-cluster-r1', serverUrl: 'https://35.229.71.215']) {
             sh """
@@ -535,18 +512,15 @@ def getBuildCommand() {
 }
 
 def getGitPrBranchName() {
-  // The branch name could be in the BRANCH_NAME or GIT_BRANCH variable depending on the type of job
-  //def branchName = env.BRANCH_NAME ? env.BRANCH_NAME : env.GIT_BRANCH
-  //return branchName || ghprbSourceBranch
-  if(env.ghprbSourceBranch){
+  if (env.ghprbSourceBranch) {
     return env.ghprbSourceBranch
   } else {
     return params.REPOSITORY_BRANCH
   }
 }
 
-def getGitBranchName(){ // we can place some conditions in future
-  if(env.ghprbSourceBranch){
+def getGitBranchName() {
+  if (env.ghprbSourceBranch) {
     return env.ghprbSourceBranch
   } else {
     return params.REPOSITORY_BRANCH
@@ -695,4 +669,4 @@ def getName(json_file_path) {
   def InputJSON = new JsonSlurper().parseText(inputFile)
   def name = InputJSON.name
   return name
-}
+} 
