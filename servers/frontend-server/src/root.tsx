@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import * as React from 'react';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, useRouteError, json } from '@remix-run/react';
 // @ts-ignore
-import publicEnv from '@src/frontend-stack-react/config/public-config';
+import publicEnv from '@src/config/public-config';
 import { PluginArea } from '@common-stack/client-react';
 import { subscribeReduxRouter } from '@common-stack/remix-router-redux';
 import { ApplicationErrorHandler } from '@admin-layout/ant-ui';
