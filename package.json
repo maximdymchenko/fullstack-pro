@@ -337,6 +337,7 @@
         "source-list-map": "^2.0.1",
         "source-map-loader": "^4.0.1",
         "source-map-support": "^0.5.21",
+        "sort-package-json": "^2.10.0",
         "standard-version": "^9.5.0",
         "stream-browserify": "^3.0.0",
         "style-loader": "^3.3.1",
