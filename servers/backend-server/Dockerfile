@@ -23,7 +23,7 @@ WORKDIR /home/app
 # Copy the rest of the files to the container workdir
 ADD . /home/app
 
-ENV PORT=8080
+ENV PORT=9090
 EXPOSE ${PORT}
 
 CMD ["yarn", "start"]
