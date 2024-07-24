@@ -93,6 +93,7 @@ export default async function handleRequest(
     // First, we create a new instance of i18next so every request will have a
     // completely unique instance and not share any state.
     if (config.i18n.enabled) {
+        console.log('config.i18n==============', config.i18n);
         await instance
             .use(initReactI18next) // Tell our instance to use react-i18next
             .use(Backend) // Setup our backend.init({
@@ -175,12 +176,7 @@ function handleBrowserRequest(
     return new Promise((resolve, reject) => {
         let shellRendered = false;
         const slotFillContext = { fills: {} };
-        const {
-            modules: clientModules,
-            container,
-            apolloClient: client,
-            store,
-        } = loadContext;
+        const { modules: clientModules, container, apolloClient: client, store } = loadContext;
 
         const { pathname, search, hash } = new URL(request.url);
         store.dispatch({

@@ -5,7 +5,7 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, useRout
 import publicEnv from '@src/config/public-config';
 import { PluginArea } from '@common-stack/client-react';
 import { subscribeReduxRouter } from '@common-stack/remix-router-redux';
-import { ApplicationErrorHandler } from '@admin-layout/ant-ui';
+// import { ApplicationErrorHandler } from '@admin-layout/ant-ui';
 import { ConfigProvider } from 'antd';
 // @ts-ignore
 import clientModules, { plugins } from '@app/frontend-stack-react/modules.js';
@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 // @ts-ignore
 import { i18nextInstance as i18next } from '@app/frontend-stack-react/i18n-localization/i18next.server.js';
 // @ts-ignore
-import { ErrorBoundary } from '@app/frontend-stack-react/entries/antui/components/ErrorBoundary';
+// import { ErrorBoundary } from '@app/frontend-stack-react/entries/antui/components/ErrorBoundary';
 
 export const loader = async ({ request }) => {
     const locale = await i18next.getLocale(request);
@@ -34,7 +34,7 @@ export function shouldRevalidate(params: any) {
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-    const data = useLoaderData<{ locale: any}>();
+    const data = useLoaderData<{ locale: any }>();
     const locale = data?.locale;
 
     const { i18n } = useTranslation();
@@ -96,12 +96,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
     return (
-        <ApplicationErrorHandler plugins={plugins}>
+        // <ApplicationErrorHandler plugins={plugins}>
             <ConfigProvider>
                 <Outlet />
             </ConfigProvider>
-        </ApplicationErrorHandler>
+        // </ApplicationErrorHandler>
     );
 }
 
-export { ErrorBoundary };
+// export { ErrorBoundary };

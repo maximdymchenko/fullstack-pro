@@ -10,7 +10,6 @@ import addJsExtensionToImportsPlugin from '@common-stack/rollup-vite-utils/lib/r
 // Define any additional plugins specific to this bundle
 const additionalPlugins = [copy({ patterns: '**/cdm-locales/**/*', rootDir: './src' })];
 
-
 function deepMergeConfigs(baseConfig, specificConfig) {
     const mergedConfig = { ...baseConfig, ...specificConfig };
 
@@ -27,13 +26,15 @@ const baseConfig = {
     plugins: [
         image(),
         graphql({ include: '**/*.gql' }),
-        string({ include: '**/*.graphql' }),
+        string({
+            include: ['**/*.ejs', '**/*.graphql'],
+        }),
         addJsExtensionToImportsPlugin({
-            packages: ['@react-icons/all-files', '@vscode-alt/monaco-editor'],
+            packages: '*',
             needToAddIndexJs: [],
             excludeImports: ['@emotion/react/jsx-runtime'],
         }),
-        typescript({ noEmitOnError: true }), // TypeScript at the top as per best practices
+        typescript(), // TypeScript at the top as per best practices
         modifyLibFilesPlugin({
             include: ['**/**/compute.js'], // Adjust to target specific files or patterns
             outputDir: 'lib', // Ensure this matches your actual output directory
