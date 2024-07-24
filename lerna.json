@@ -4,12 +4,13 @@
   "command": {
     "publish": {
       "registry": "https://registry.npmjs.org",
-      "graphType": "all",
       "allowBranch": [
         "publish",
         "devpublish",
+        "devpublish3",
         "devpublishn2",
-        "devpublish3"
+        "devpublish4",
+        "devpublish5"
       ],
       "message": "chore(release): publish",
       "ignoreChanges": [
@@ -25,8 +26,10 @@
         "develop",
         "publish",
         "devpublish",
+        "devpublish3",
         "devpublishn2",
-        "devpublish3"
+        "devpublish4",
+        "devpublish5"
       ],
       "private": true,
       "conventionalCommits": true,
@@ -34,7 +37,6 @@
     }
   },
   "npmClient": "yarn",
-  "useWorkspaces": true,
   "useNx": true,
   "packages": [
     "packages-modules/**",
@@ -42,5 +44,5 @@
     "servers/*",
     "portable-devices/*"
   ],
-  "version": "3.0.0"
+  "version": "5.0.1"
 }
