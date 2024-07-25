@@ -1,46 +1,58 @@
-/**
- * By default, Remix will handle hydrating your app on the client for you.
- * You are free to delete this file if you'd like to, but if you ever want it revealed again, you can run `npx remix reveal` ✨
- * For more information, see https://remix.run/file-conventions/entry.client
- */
-import * as React from 'react';
+import React, { useState, startTransition, StrictMode } from 'react';
 import 'reflect-metadata';
 import { RemixBrowser } from '@remix-run/react';
-import { startTransition, StrictMode } from 'react';
 import { hydrateRoot } from 'react-dom/client';
-import { createCache, StyleProvider } from '@ant-design/cssinjs';
 import { ApolloProvider } from '@apollo/client/index.js';
 import { SlotFillProvider, removeUniversalPortals } from '@common-stack/components-pro';
-import { InversifyProvider } from '@common-stack/client-react';
+import { InversifyProvider, PluginArea } from '@common-stack/client-react';
 import { Provider as ReduxProvider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { persistStore } from 'redux-persist';
 import { CacheProvider } from '@emotion/react';
-import i18next from 'i18next';
-import { I18nextProvider, initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
-import Backend from 'i18next-http-backend';
+
 // @ts-ignore
-import { getInitialNamespaces } from 'remix-i18next/client';
+import createEmotionCache, { defaultCache } from '@app/frontend-stack-react/entries/common/createEmotionCache';
 // @ts-ignore
 import { createReduxStore } from '@app/frontend-stack-react/config/redux-config.js';
 // @ts-ignore
 import { createClientContainer } from '@app/frontend-stack-react/config/client.service';
 // @ts-ignore
 import clientModules from '@app/frontend-stack-react/modules.js';
+
+import i18next from 'i18next';
+import { I18nextProvider, initReactI18next } from 'react-i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
+import Backend from 'i18next-http-backend';
 // @ts-ignore
-import createEmotionCache from '@app/frontend-stack-react/entries/common/createEmotionCache.js';
-// @ts-ignore
+import { getInitialNamespaces } from 'remix-i18next/client';
 import config from '@app/cde-webconfig.json';
+// @ts-ignore
+import { ClientStyleContext } from '@app/frontend-stack-react/entries/chakraui/context.js';
 
 const { apolloClient: client, container, serviceFunc } = createClientContainer();
 const { store } = createReduxStore(client, serviceFunc(), container);
 const persistor = persistStore(store);
-const antCache = createCache();
-const cache = createEmotionCache();
 
 (window as any).__remixStore = store;
 removeUniversalPortals((window as any).__SLOT_FILLS__ || []);
+
+interface ClientCacheProviderProps {
+    children: React.ReactNode;
+}
+
+function ClientCacheProvider({ children }: ClientCacheProviderProps) {
+    const [cache, setCache] = useState(defaultCache);
+
+    function reset() {
+        setCache(createEmotionCache());
+    }
+
+    return (
+        <ClientStyleContext.Provider value={{ reset }}>
+            <CacheProvider value={cache}>{children}</CacheProvider>
+        </ClientStyleContext.Provider>
+    );
+}
 
 async function hydrate() {
     if (!i18next.isInitialized && config.i18n.enabled) {
@@ -61,40 +73,33 @@ async function hydrate() {
                 },
             });
     }
-    startTransition(() => {
-        hydrateRoot(
-            document,
-            (
-                <I18nextProvider i18n={i18next}>
-                    <StrictMode>
-                        <CacheProvider value={cache}>
-                            <StyleProvider cache={antCache}>
-                                <ReduxProvider store={store}>
-                                    <SlotFillProvider>
-                                        <InversifyProvider container={container} modules={clientModules}>
-                                            <PersistGate loading={null} persistor={persistor}>
-                                                {() => (
-                                                    <ApolloProvider client={client}>
-                                                        <RemixBrowser />
-                                                    </ApolloProvider>
-                                                )}
-                                            </PersistGate>
-                                        </InversifyProvider>
-                                    </SlotFillProvider>
-                                </ReduxProvider>
-                            </StyleProvider>
-                        </CacheProvider>
-                    </StrictMode>
-                </I18nextProvider>
-            ) as any,
-        );
-    });
+    hydrateRoot(
+        document.getElementById('root')!,
+        <StrictMode>
+            <I18nextProvider i18n={i18next}>
+                <ClientCacheProvider>
+                    <ApolloProvider client={client}>
+                        <ReduxProvider store={store}>
+                            <SlotFillProvider>
+                                <InversifyProvider container={container} modules={clientModules}>
+                                    <PersistGate loading={null} persistor={persistor}>
+                                        {() => <RemixBrowser />}
+                                    </PersistGate>
+                                </InversifyProvider>
+                            </SlotFillProvider>
+                        </ReduxProvider>
+                    </ApolloProvider>
+                </ClientCacheProvider>
+            </I18nextProvider>
+        </StrictMode>,
+    );
+    // });
 }
 
-if (window.requestIdleCallback) {
-    window.requestIdleCallback(hydrate);
+if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(hydrate);
 } else {
     // Safari doesn't support requestIdleCallback
     // https://caniuse.com/requestidlecallback
-    window.setTimeout(hydrate, 1);
+    setTimeout(hydrate, 1);
 }
