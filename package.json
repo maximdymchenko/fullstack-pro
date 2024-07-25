@@ -123,6 +123,7 @@
     },
     "dependencies": {
         "dataloader": "^2.1.0",
+        "framer-motion": "^6.2.6",
         "graphql": "^15.0.0",
         "graphql-tag": "^2.12.6"
     },

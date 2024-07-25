@@ -6,6 +6,6 @@ import ReduxFirstHistory from './redux-first-history';
 import EpicModule from './epics/module';
 import emotion from './emotion';
 // import { ElectronTrayModule } from './redux-first-history/index.electron';
-
+export * from './generated-models';
 export default new Feature(Common, ReduxFirstHistory, ApolloCounter, emotion, EpicModule);
 // export { ElectronTrayModule };

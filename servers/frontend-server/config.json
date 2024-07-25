@@ -32,6 +32,7 @@
   "modules": [
     "@sample-stack/counter-module-browser"
   ],
+  "uiFramework": "chakraui",
   "buildConfig": {
     "__CLIENT__": false,
     "__SERVER__": true,
