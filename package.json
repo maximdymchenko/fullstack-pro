@@ -37,6 +37,7 @@
         "clean:install": "yarn clean:force && yarn git:pull && yarn bootstrap",
         "cli": "node tools/cli",
         "commit": "git cz",
+        "prepare": "husky",
         "compile": "lerna exec -- yarn compile",
         "coverage": "jest --coverage",
         "postcoverage": "remap-istanbul --input coverage/coverage.raw.json --type lcovonly --output coverage/lcov.info",
@@ -109,7 +110,8 @@
         "*.{js,jsx,ts,tsx}": [
             "eslint --fix",
             "git add"
-        ]
+        ],
+        "package.json": "sort-package-json  --check package.json */**/package.json "
     },
     "resolutions": {
         "@apollo/client": "^3.9.0",
@@ -293,7 +295,7 @@
         "lerna": "^6.1.0",
         "less": "^4.1.3",
         "less-loader": "^11.0.0",
-        "lint-staged": "^13.0.3",
+        "lint-staged": "^15.2.7",
         "lodash": "^4.17.21",
         "lodash-es": "^4.17.21",
         "lodash-webpack-plugin": "^0.11.6",
