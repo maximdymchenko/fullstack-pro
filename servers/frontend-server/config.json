@@ -31,5 +31,22 @@
   },
   "modules": [
     "@sample-stack/counter-module-browser"
-  ]
+  ],
+  "uiFramework": "chakraui",
+  "buildConfig": {
+    "__CLIENT__": false,
+    "__SERVER__": true,
+    "__DEV__": false,
+    "__TEST__": false,
+    "__CDN_URL__": "",
+    "__GRAPHQL_URL__": "http://localhost:8080/graphql",
+    "__DEBUGGING__": false,
+    "__SSR__": true,
+    "__API_URL__": "/graphql",
+    "__FRONTEND_BUILD_DIR__": "./dist/client",
+    "__WEB_DEV_SERVER_PORT__": 3000,
+    "__GRAPHQL_ENDPOINT__": "/graphql",
+    "__LOCAL_SERVER_HOST__": "localhost",
+    "__BACKEND_URL__": "http://localhost:3000"
+  }
 }

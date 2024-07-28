@@ -34,12 +34,12 @@
         "watch": "yarn start:dev"
     },
     "dependencies": {
-        "@cdm-logger/client": "^7.0.14",
-        "@cdm-logger/server": "^7.0.14",
-        "@common-stack/client-core": "4.0.2-alpha.14",
-        "@common-stack/core": "4.0.2-alpha.14",
-        "@common-stack/server-core": "4.0.2-alpha.14",
-        "@common-stack/store-mongo": "4.0.2-alpha.14",
+        "@cdm-logger/client": "^9.0.3",
+        "@cdm-logger/server": "^9.0.3",
+        "@common-stack/client-core": "5.0.4-alpha.0",
+        "@common-stack/core": "5.0.4-alpha.0",
+        "@common-stack/server-core": "5.0.4-alpha.0",
+        "@common-stack/store-mongo": "5.0.4-alpha.0",
         "@sample-stack/core": "link:../../packages/sample-core",
         "@sample-stack/counter-module-server": "link:../../packages-modules/counter/server",
         "@sample-stack/platform-server": "link:../../packages/sample-platform/server",

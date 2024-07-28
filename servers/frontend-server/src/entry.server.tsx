@@ -3,80 +3,50 @@
  * You are free to delete this file if you'd like to, but if you ever want it revealed again, you can run `npx remix reveal` ✨
  * For more information, see https://remix.run/file-conventions/entry.server
  */
-import * as React from 'react';
-(global as any).__CLIENT__ = false;
-(global as any).__SERVER__ = true;
+// @ts-nocheck
+global.__CLIENT__ = false;
+global.__SERVER__ = true;
+import React from 'react';
 import { PassThrough, Transform } from 'node:stream';
-import type { EntryContext } from '@remix-run/node';
+import type { AppLoadContext, EntryContext } from '@remix-run/node';
 import { createReadableStreamFromReadable } from '@remix-run/node';
 import { RemixServer } from '@remix-run/react';
 import { isbot } from 'isbot';
 import { ApolloProvider } from '@apollo/client/index.js';
 import { SlotFillProvider } from '@common-stack/components-pro';
-import { InversifyProvider } from '@common-stack/client-react';
-import { renderToPipeableStream } from 'react-dom/server';
+import { InversifyProvider, PluginArea } from '@common-stack/client-react';
+import { renderToPipeableStream, renderToString } from 'react-dom/server';
 import { Provider as ReduxProvider } from 'react-redux';
 import { LOCATION_CHANGE } from '@common-stack/remix-router-redux';
 import serialize from 'serialize-javascript';
-import { createCache as createAntdCache, extractStyle, StyleProvider } from '@ant-design/cssinjs';
 import { CacheProvider } from '@emotion/react';
-import { renderStylesToNodeStream } from '@emotion/server';
-import { createInstance } from 'i18next';
-import { I18nextProvider, initReactI18next } from 'react-i18next';
+import createEmotionServer from '@emotion/server/create-instance';
 import Backend from 'i18next-fs-backend';
+import { renderToString } from 'react-dom/server';
+import { renderHeadToString } from 'remix-island';
+import publicEnv from '@src/config/public-config';
+import { I18nextProvider, initReactI18next } from 'react-i18next';
+import { createInstance } from 'i18next';
 import { resolve } from 'node:path';
+// import { renderStylesToNodeStream } from '@emotion/server';
 // @ts-ignore
-import { i18nextInstance as i18next } from '@app/frontend-stack-react/i18n-localization/i18next.server.js';
+import { defaultCache } from '@app/frontend-stack-react/entries/common/createEmotionCache.js';
+// @ts-ignore
 import config from '@app/cde-webconfig.json';
-// @ts-ignore
-import createEmotionCache from '@app/frontend-stack-react/entries/common/createEmotionCache';
+
+import { Head } from './root';
 import type { IAppLoadContext } from '@common-stack/client-core';
+import { ServerStyleContext } from '@app/frontend-stack-react/entries/chakraui/context.js';
+import { i18nextInstance as i18next } from '@app/frontend-stack-react/i18n-localization/i18next.server.js';
+const { extractCriticalToChunks } = createEmotionServer(defaultCache);
 
-const ABORT_DELAY = 5_000;
-const antdCache = createAntdCache();
-const cache = createEmotionCache();
+const ABORT_DELAY = 5000;
+const COMMON_HEAD = `
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+`;
 
-class ConstantsTransform extends Transform {
-    _fills: string[];
-    _apolloState: any;
-    _reduxState: any;
-    _styleSheet: string;
-
-    constructor(fills: string[], apolloState: any, reduxState: any, styleSheet: any) {
-        super();
-        this._fills = fills;
-        this._apolloState = apolloState;
-        this._reduxState = reduxState;
-        this._styleSheet = styleSheet;
-    }
-
-    _transform(chunk, encoding, callback) {
-        let transformedChunk = chunk.toString();
-
-        if (transformedChunk.includes('[__APOLLO_STATE__]')) {
-            transformedChunk = transformedChunk.replace(
-                '[__APOLLO_STATE__]',
-                serialize(this._apolloState, { isJSON: true }),
-            );
-        }
-        if (transformedChunk.includes('[__PRELOADED_STATE__]')) {
-            transformedChunk = transformedChunk.replace(
-                '[__PRELOADED_STATE__]',
-                serialize(this._reduxState, { isJSON: true }),
-            );
-        }
-        if (transformedChunk.includes('[__SLOT_FILLS__]')) {
-            transformedChunk = transformedChunk.replace('[__SLOT_FILLS__]', serialize(this._fills, { isJSON: true }));
-        }
-        if (transformedChunk.includes('[__STYLESHEET__]')) {
-            transformedChunk = transformedChunk.replace('[__STYLESHEET__]', this._styleSheet);
-        }
-
-        callback(null, transformedChunk);
-    }
-}
-
-export default async function handleRequest(
+export default function handleRequest(
     request: Request,
     responseStatusCode: number,
     responseHeaders: Headers,
@@ -84,34 +54,11 @@ export default async function handleRequest(
     // This is ignored so we can keep it in the template for visibility.  Feel
     // free to delete this parameter in your app if you're not using it!
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    loadContext: IAppLoadContext,
+    loadContext: AppLoadContext,
 ) {
-    const instance = createInstance();
-    const lng = await i18next.getLocale(request);
-    const ns = i18next.getRouteNamespaces(remixContext);
-
-    // First, we create a new instance of i18next so every request will have a
-    // completely unique instance and not share any state.
-    if (config.i18n.enabled) {
-        await instance
-            .use(initReactI18next) // Tell our instance to use react-i18next
-            .use(Backend) // Setup our backend.init({
-            .init({
-                fallbackLng: config.i18n.fallbackLng,
-                defaultNS: config.i18n.defaultNS,
-                react: config.i18n.react,
-                supportedLngs: config.i18n.supportedLngs,
-                lng, // The locale we detected above
-                ns, // The namespaces the routes about to render want to use
-                backend: {
-                    loadPath: resolve(config.i18n.backend.loadServerPath),
-                },
-            });
-    }
-
     return isbot(request.headers.get('user-agent') || '')
-        ? handleBotRequest(request, responseStatusCode, responseHeaders, remixContext, loadContext, instance)
-        : handleBrowserRequest(request, responseStatusCode, responseHeaders, remixContext, loadContext, instance);
+        ? handleBotRequest(request, responseStatusCode, responseHeaders, remixContext, loadContext)
+        : handleBrowserRequest(request, responseStatusCode, responseHeaders, remixContext, loadContext);
 }
 
 function handleBotRequest(
@@ -120,30 +67,29 @@ function handleBotRequest(
     responseHeaders: Headers,
     remixContext: EntryContext,
     loadContext: IAppLoadContext,
-    i18nInstance: i18next,
 ) {
     return new Promise((resolve, reject) => {
         let shellRendered = false;
         const { pipe, abort } = renderToPipeableStream(
-            <I18nextProvider i18n={i18nInstance}>
-                <RemixServer context={remixContext} url={request.url} abortDelay={ABORT_DELAY} />
-            </I18nextProvider>,
+            <RemixServer context={remixContext} url={request.url} abortDelay={ABORT_DELAY} />,
             {
                 onAllReady() {
                     shellRendered = true;
+
+                    const head = renderHeadToString({ request, remixContext, Head });
                     const body = new PassThrough();
-                    const stream = createReadableStreamFromReadable(body);
 
                     responseHeaders.set('Content-Type', 'text/html');
-
+                    const stream = createReadableStreamFromReadable(body);
                     resolve(
                         new Response(stream, {
                             headers: responseHeaders,
                             status: responseStatusCode,
                         }),
                     );
-
+                    body.write(`<!DOCTYPE html><html><head>${COMMON_HEAD}${head}</head><body><div id="root">`);
                     pipe(body);
+                    body.write(`</div></body></html>`);
                 },
                 onShellError(error: unknown) {
                     reject(error);
@@ -164,23 +110,61 @@ function handleBotRequest(
     });
 }
 
-function handleBrowserRequest(
+async function handleBrowserRequest(
     request: Request,
     responseStatusCode: number,
     responseHeaders: Headers,
     remixContext: EntryContext,
     loadContext: IAppLoadContext,
-    i18nInstance: i18next,
 ) {
+    const instance = createInstance();
+
+    // Then we could detect locale from the request
+    const lng = await i18next.getLocale(request);
+    // And here we detect what namespaces the routes about to render want to use
+    const ns = i18next.getRouteNamespaces(remixContext);
+    const slotFillContext = { fills: {} };
+    const { modules: clientModules, container, apolloClient: client, store }: IAppLoadContext = loadContext;
+
+    // First, we create a new instance of i18next so every request will have a
+    // completely unique instance and not share any state.
+    if (config.i18n.enabled) {
+        await instance
+            .use(initReactI18next) // Tell our instance to use react-i18next
+            .use(Backend) // Setup our backend.init({
+            .init({
+                fallbackLng: config.i18n.fallbackLng,
+                defaultNS: config.i18n.defaultNS,
+                react: config.i18n.react,
+                supportedLngs: config.i18n.supportedLngs,
+                lng, // The locale we detected above
+                ns, // The namespaces the routes about to render want to use
+                backend: {
+                    loadPath: resolve(config.i18n.backend.loadServerPath),
+                },
+            });
+    }
+
+    const html = renderToString(
+        <I18nextProvider i18n={instance}>
+            <CacheProvider value={defaultCache}>
+                <ApolloProvider client={client}>
+                    <ReduxProvider store={store}>
+                        <SlotFillProvider context={slotFillContext}>
+                            <InversifyProvider container={container} modules={clientModules}>
+                                <RemixServer context={remixContext} url={request.url} />
+                            </InversifyProvider>
+                        </SlotFillProvider>
+                    </ReduxProvider>
+                </ApolloProvider>
+            </CacheProvider>
+        </I18nextProvider>,
+    );
+
+    const chunks = extractCriticalToChunks(html);
+
     return new Promise((resolve, reject) => {
         let shellRendered = false;
-        const slotFillContext = { fills: {} };
-        const {
-            modules: clientModules,
-            container,
-            apolloClient: client,
-            store,
-        } = loadContext;
 
         const { pathname, search, hash } = new URL(request.url);
         store.dispatch({
@@ -190,37 +174,46 @@ function handleBrowserRequest(
 
         const { pipe, abort } = renderToPipeableStream(
             (
-                <I18nextProvider i18n={i18nInstance}>
-                    <CacheProvider value={cache}>
-                        <StyleProvider cache={antdCache}>
-                            <ReduxProvider store={store}>
-                                <SlotFillProvider context={slotFillContext}>
-                                    <InversifyProvider container={container} modules={clientModules as any}>
-                                        <ApolloProvider client={client}>
+                <I18nextProvider i18n={instance}>
+                    <ServerStyleContext.Provider value={chunks.styles}>
+                        <CacheProvider value={defaultCache}>
+                            <ApolloProvider client={client}>
+                                <ReduxProvider store={store}>
+                                    <SlotFillProvider context={slotFillContext}>
+                                        <InversifyProvider container={container} modules={clientModules}>
                                             <RemixServer
                                                 context={remixContext}
                                                 url={request.url}
                                                 abortDelay={ABORT_DELAY}
                                             />
-                                        </ApolloProvider>
-                                    </InversifyProvider>
-                                </SlotFillProvider>
-                            </ReduxProvider>
-                        </StyleProvider>
-                    </CacheProvider>
+                                        </InversifyProvider>
+                                    </SlotFillProvider>
+                                </ReduxProvider>
+                            </ApolloProvider>
+                        </CacheProvider>
+                    </ServerStyleContext.Provider>
                 </I18nextProvider>
             ) as any,
             {
                 onShellReady() {
                     shellRendered = true;
+                    const head = renderHeadToString({ request, remixContext, Head });
                     const body = new PassThrough();
                     const stream = createReadableStreamFromReadable(body);
                     const apolloState = { ...client.extract() };
                     const reduxState = { ...store.getState() };
                     const fills = Object.keys(slotFillContext.fills);
-                    const styleSheet = extractStyle(antdCache);
+                    // const transform = new ConstantsTransform(fills, apolloState, reduxState);
 
-                    const transform = new ConstantsTransform(fills, apolloState, reduxState, styleSheet);
+                    let customHead = `<script>window.__ENV__=${JSON.stringify(publicEnv)}</script>`;
+                    customHead += `<script>window.__APOLLO_STATE__=${serialize(apolloState, {
+                        isJSON: true,
+                    })}</script>`;
+                    customHead += `<script>window.__PRELOADED_STATE__=${serialize(reduxState, {
+                        isJSON: true,
+                    })}</script>`;
+                    customHead += `<script>window.__SLOT_FILLS__=${serialize(fills, { isJSON: true })}</script>`;
+                    customHead += `<script>if (global === undefined) { var global = window; }</script>`;
 
                     responseHeaders.set('Content-Type', 'text/html');
 
@@ -230,8 +223,12 @@ function handleBrowserRequest(
                             status: responseStatusCode,
                         }),
                     );
-
-                    pipe(transform).pipe(renderStylesToNodeStream()).pipe(body);
+                    body.write(
+                        `<!DOCTYPE html><html lng=${lng}><head>${COMMON_HEAD}${customHead}${head}</head><body><div id="root">`,
+                    );
+                    pipe(body);
+                    body.write(`</div></body></html>`);
+                    // pipe(transform).pipe(renderStylesToNodeStream()).pipe(body);
                 },
                 onShellError(error: unknown) {
                     reject(error);
