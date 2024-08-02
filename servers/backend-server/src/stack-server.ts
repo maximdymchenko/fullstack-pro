@@ -175,6 +175,8 @@ export class StackServer {
             }),
             directives: [],
             directiveResolvers: allModules.createDirectives({ logger: this.logger }),
+            middlewares: allModules.graphqlMiddlewares,
+            rules: allModules.rules,
             logger: serverLogger,
         }).build();
 

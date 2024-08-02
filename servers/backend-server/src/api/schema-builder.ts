@@ -11,11 +11,13 @@ import { introspectSchema, wrapSchema } from '@graphql-tools/wrap';
 import * as ws from 'ws';
 import { getMainDefinition } from '@apollo/client/utilities';
 import { WebSocketLink } from '@apollo/client/link/ws';
-import { split } from '@apollo/client';
-import { logger } from '@common-stack/server-core';
+import { split } from '@apollo/client/index.js';
+import { IGraphqlShieldRules, logger } from '@common-stack/server-core';
 import { HttpLink } from '@apollo/client/link/http';
 import * as fetch from 'isomorphic-fetch';
 import { CdmLogger } from '@cdm-logger/core';
+import { shield } from 'graphql-shield';
+import { applyMiddleware } from 'graphql-middleware';
 import { remoteSchemaDetails } from './remote-config';
 import rootSchemaDef from './root-schema.graphqls';
 import { resolvers as rootResolver } from './resolver';
@@ -25,7 +27,9 @@ interface IGraphqlOptions {
     schema: string | string[];
     resolvers: any;
     directives: any[];
-    directiveResolvers: { [key: string]: any};
+    directiveResolvers: { [key: string]: any };
+    middlewares: any[];
+    rules?: IGraphqlShieldRules;
     logger: CdmLogger.ILogger;
 }
 export class GatewaySchemaBuilder {
@@ -42,6 +46,17 @@ export class GatewaySchemaBuilder {
             gatewaySchema = stitchSchemas({
                 subschemas: [ownSchema],
             });
+
+            // Apply middleware to the schema
+            if (this.options.middlewares && this.options.middlewares.length > 0) {
+                gatewaySchema = applyMiddleware(
+                    gatewaySchema,
+                    ...this.options.middlewares,
+                    shield(this.options.rules || {}, {
+                        allowExternalErrors: true,
+                    }),
+                );
+            }
             // TODO after updating graphql-tools to v8
             // addErrorLoggingToSchema(schema, { log: (e) => logger.error(e as Error) });
         } catch (err) {
@@ -151,15 +166,13 @@ export class GatewaySchemaBuilder {
     private createOwnSchema(): GraphQLSchema {
         const typeDefs = [rootSchemaDef, this.options.schema].join('\n');
         if (__DEV__) {
-            import('../modules/module').then(
-                ({ ExternalModules }) => {
-                    const externalSchema = ExternalModules?.schemas || ``;
-                    const writeData = `${externalSchema}`;
-                    fs.writeFileSync('./generated-schema.graphql', writeData);
-                }
-            )
+            import('../modules/module').then(({ ExternalModules }) => {
+                const externalSchema = ExternalModules?.schemas || ``;
+                const writeData = `${externalSchema}`;
+                fs.writeFileSync('./generated-schema.graphql', writeData);
+            });
         }
-        let mergedSchema =  makeExecutableSchema({
+        let mergedSchema = makeExecutableSchema({
             resolvers: [rootResolver, this.options.resolvers],
             typeDefs,
             resolverValidationOptions: {
@@ -167,7 +180,7 @@ export class GatewaySchemaBuilder {
             },
         });
         // mergedSchema = this.options.directives.reduce((curSchema,transform) => transform(curSchema), mergedSchema);
-        if (this.options.directiveResolvers && Object.keys(this.options.directiveResolvers).length !== 0 ) {
+        if (this.options.directiveResolvers && Object.keys(this.options.directiveResolvers).length !== 0) {
             this.options.logger.warn('directiveResolvers deprecated replaced with directives');
             mergedSchema = attachDirectiveResolvers(mergedSchema, this.options.directiveResolvers);
         }
