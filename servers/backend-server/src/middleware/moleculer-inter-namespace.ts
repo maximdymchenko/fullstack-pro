@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { ServiceBroker, Middleware } from 'moleculer';
-import * as _ from 'lodash';
+import { isString, defaultsDeep } from 'lodash-es';
 
 export const InterNamespaceMiddleware = function (options): Middleware {
     if (!Array.isArray(options)) {
@@ -14,14 +14,14 @@ export const InterNamespaceMiddleware = function (options): Middleware {
         created(broker: ServiceBroker) {
             thisBroker = broker;
             options.forEach((nsOpts) => {
-                if (_.isString(nsOpts)) {
+                if (isString(nsOpts)) {
                     nsOpts = {
                         namespace: nsOpts,
                     };
                 }
                 const ns = nsOpts.namespace;
 
-                const brokerOpts = _.defaultsDeep(
+                const brokerOpts = defaultsDeep(
                     {},
                     nsOpts,
                     { nodeID: null, middlewares: null, created: null, started: null },
@@ -41,7 +41,7 @@ export const InterNamespaceMiddleware = function (options): Middleware {
 
         call(next) {
             return function (actionName, params, opts = {}) {
-                if (_.isString(actionName) && actionName.includes('@')) {
+                if (isString(actionName) && actionName.includes('@')) {
                     const [action, namespace] = actionName.split('@');
 
                     if (brokers[namespace]) {

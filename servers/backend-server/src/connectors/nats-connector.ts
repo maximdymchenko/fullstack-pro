@@ -1,5 +1,5 @@
 import * as nats from 'nats';
-import * as _ from 'lodash';
+import { defaultsDeep } from 'lodash-es';
 import { logger } from '@cdm-logger/server';
 import { CdmLogger } from '@cdm-logger/core';
 
@@ -15,7 +15,7 @@ export class NatsConnector {
     private connected: boolean;
 
     constructor(opts: nats.ClientOpts) {
-        this.opts = _.defaultsDeep(opts, {});
+        this.opts = defaultsDeep(opts, {});
         this.logger = logger.child({ className: 'NatsConnector' });
     }
 

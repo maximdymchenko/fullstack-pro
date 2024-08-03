@@ -4,6 +4,7 @@ import * as bodyParser from 'body-parser';
 import modules from './modules';
 import { errorMiddleware } from './middleware/error';
 import { contextServicesMiddleware } from './middleware/services';
+import { sentryMiddleware, sentryErrorHandlerMiddleware } from './middleware/sentry';
 import { IModuleService } from './interfaces';
 import { corsMiddleware } from './middleware/cors';
 
@@ -12,15 +13,17 @@ const cookiesMiddleware = require('universal-cookie-express');
 export function expressApp(options: IModuleService, middlewares, http?) {
     const app: express.Express = express();
 
-    app.use(contextServicesMiddleware(options.createContext, options.serviceContext));
-    app.use(cookiesMiddleware());
-
+    
     for (const applyBeforeware of modules.beforewares) {
         applyBeforeware(app);
     }
+    app.use(cookiesMiddleware());
+    app.use(contextServicesMiddleware(options.createContext, options.serviceContext));
 
     // Don't rate limit heroku
     app.enable('trust proxy');
+
+    app.use(sentryMiddleware);
 
     if (middlewares !== null) {
         app.use(middlewares);
@@ -31,7 +34,6 @@ export function expressApp(options: IModuleService, middlewares, http?) {
     app.use(corsMiddleware);
     app.use((req, res, next) => {
         res.header('Access-Control-Allow-Credentials', JSON.stringify(true));
-        res.header('Access-Control-Allow-Origin', req.headers.origin as string);
         res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
         res.header(
             'Access-Control-Allow-Headers',
@@ -58,6 +60,8 @@ export function expressApp(options: IModuleService, middlewares, http?) {
     if (__DEV__) {
         app.use(errorMiddleware);
     }
+
+    app.use(sentryErrorHandlerMiddleware);
 
     return app;
 }

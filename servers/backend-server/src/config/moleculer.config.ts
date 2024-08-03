@@ -214,6 +214,7 @@ const brokerConfig: BrokerOptions = {
     // Register custom middlewares
     middlewares: [],
 
+
     // Called after broker created.
     created(broker) {},
 

@@ -1,5 +1,9 @@
 import { ApolloServer, ApolloServerExpressConfig } from 'apollo-server-express';
-import { ApolloServerPluginCacheControl, ApolloServerPluginDrainHttpServer } from 'apollo-server-core';
+import {
+    ApolloServerPluginCacheControl,
+    ApolloServerPluginDrainHttpServer,
+    GraphQLRequestContext
+} from 'apollo-server-core';
 import responseCachePlugin from 'apollo-server-plugin-response-cache';
 import 'isomorphic-fetch';
 import { Express } from 'express';
@@ -12,7 +16,8 @@ import { CdmLogger } from '@cdm-logger/core';
 import { WebSocketServer } from 'ws';
 import { IModuleService } from '../interfaces';
 import { GraphqlWs } from './graphql-ws';
-import { config } from '../config/env-config';
+import { invalidateCachePlugin } from '@adminide-stack/platform-server';
+import { config } from '../config';
 
 type ILogger = CdmLogger.ILogger;
 
@@ -30,17 +35,18 @@ const constructDataSourcesForSubscriptions = (context, cache, dataSources) => {
     // tslint:disable-next-line:forin
     // eslint-disable-next-line guard-for-in
     for (const prop in dataSources) {
-        // tslint:disable-next-line:no-console
         intializeDataSource(dataSources[prop]);
     }
     return dataSources;
 };
 
 let wsServerCleanup: any;
+
+
+
 export class GraphqlServer {
     private logger: ILogger;
 
-    // private wsServerCleanup: any;
     constructor(
         private app: Express,
         private httpServer: http.Server,
@@ -56,7 +62,6 @@ export class GraphqlServer {
             });
             const graphqlWs = new GraphqlWs(wsServer, this.moduleService, this.cache);
             wsServerCleanup = graphqlWs.create();
-            // wsServerCleanup = useServer({ schema: this.moduleService.schema}, wsServer)
         }
     }
 
@@ -88,13 +93,16 @@ export class GraphqlServer {
     }
 
     private configureApolloServer(): ApolloServer {
+        this.logger.info('-- Configuring Apollo Server --');
+        const cache = new KeyvAdapter(new Keyv({ store: new KeyvRedis(this.cache.client) }), {
+            disableBatchReads: true,
+        });
+
         const serverConfig: ApolloServerExpressConfig = {
             debug,
+            cache,
             schema: this.moduleService.schema,
             dataSources: () => this.moduleService.dataSource,
-            cache: new KeyvAdapter(new Keyv({ store: new KeyvRedis(this.cache) }), {
-                disableBatchReads: true,
-            }),
             context: async ({
                 req,
                 res,
@@ -136,7 +144,7 @@ export class GraphqlServer {
                     }
                     context.userIp = this.getUserIpAddress(req);
                 } catch (err) {
-                    this.logger.error('adding context to graphql failed due to [%o]', err);
+                    this.logger.error('Adding context to GraphQL failed', { error: err });
                     throw err;
                 }
                 return {
@@ -147,16 +155,18 @@ export class GraphqlServer {
                 };
             },
             plugins: [
-                // process.env.NODE_ENV === 'production'
-                //     ? ApolloServerPluginLandingPageDisabled()
-                //     :
-                // ApolloServerPluginLandingPageGraphQLPlayground(),
-                // ApolloServerPluginLandingPageDisabled(),
                 ApolloServerPluginDrainHttpServer({ httpServer: this.httpServer }),
                 ApolloServerPluginCacheControl(),
                 responseCachePlugin({
-                    sessionId: (requestContext) => requestContext?.userContext?.accountId || null,
+                    sessionId: ({ context }) => context?.userContext?.accountId ?? null,
+                    generateCacheKey({
+                                         queryHash,
+                                         operationName
+                                     }: GraphQLRequestContext<Record<string, any>>, keyData): string {
+                        return `${operationName}:${queryHash}`;
+                    },
                 }),
+                invalidateCachePlugin({ cache: this.cache }),
             ],
         };
         if (this.enableSubscription) {

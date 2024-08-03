@@ -1,9 +1,7 @@
 /// <reference path='../../../../typings/index.d.ts' />
-import * as envalid from 'envalid';
+import { str, bool, num, json, cleanEnv } from 'envalid';
 
-const { str, bool, json } = envalid;
-
-export const config = envalid.cleanEnv(process.env, {
+export const config = cleanEnv(process.env, {
     NODE_ENV: str({ default: 'production', choices: ['production', 'staging', 'development', 'test'] }),
     NATS_URL: str({ devDefault: 'nats://localhost:4222/' }),
     NATS_USER: str({ devDefault: 'test' }),
@@ -27,7 +25,10 @@ export const config = envalid.cleanEnv(process.env, {
     GRAPHQL_URL: str({ devDefault: __GRAPHQL_URL__ }),
     CLIENT_URL: str({ devDefault: __BACKEND_URL__ }),
     CONNECTION_ID: str({ devDefault: 'CONNECTION_ID' }),
+    MAILGUN_KEY: str(),
+    MAILGUN_DOMAIN: str(),
     NAMESPACE: str({ default: 'default' }),
+    ACTIVITY_NAMESPACE: str({ devDefault: 'default' }),
     API_NAMESPACE: str({ devDefault: 'default' }),
     ADMIN_API_NAMESPACE: str({ devDefault: 'default' }),
 });

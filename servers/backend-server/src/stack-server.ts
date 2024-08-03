@@ -9,8 +9,10 @@ import { Feature } from '@common-stack/server-core';
 import { ContainerModule, interfaces, Container } from 'inversify';
 import { ServiceBroker, ServiceSettingSchema } from 'moleculer';
 import { CommonType } from '@common-stack/core';
-import * as _ from 'lodash';
+import { isEmpty } from 'lodash-es';
 import { CdmLogger } from '@cdm-logger/core';
+import { applyMiddleware } from 'graphql-middleware';
+import { shield } from 'graphql-shield';
 import { expressApp } from './express-app';
 import { GraphqlServer } from './server-setup/graphql-server';
 import { config } from './config';
@@ -166,7 +168,7 @@ export class StackServer {
         });
 
         const allModules = new Feature(InfraStructureFeature, modules as Feature);
-        const executableSchema = await new GatewaySchemaBuilder({
+        let executableSchema = await new GatewaySchemaBuilder({
             schema: allModules.schemas,
             resolvers: allModules.createResolvers({
                 pubsub,
@@ -220,7 +222,7 @@ export class StackServer {
         });
 
         const customWebsocket = allModules.getWebsocketConfig();
-        const customWebsocketEnable = !_.isEmpty(customWebsocket);
+        const customWebsocketEnable = !isEmpty(customWebsocket);
 
         if (customWebsocketEnable) {
             this.multiPathWebsocket = new WebsocketMultiPathServer(serviceBroker, redisClient, customWebsocket);
@@ -235,6 +237,16 @@ export class StackServer {
         );
 
         await graphqlServer.initialize();
+        this.app.use('/graphql', (req, res, next) => {
+            res.append('Access-Control-Allow-Credentials', JSON.stringify(true));
+            res.append('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+            res.append('Access-Control-Allow-Origin', '*');
+            res.append(
+                'Access-Control-Allow-Headers',
+                'X-Requested-With, X-HTTP-Method-Override, X-CSP-Nonce, Content-Type, Accept',
+            );
+            next();
+        });
     }
 
     public async start() {

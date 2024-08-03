@@ -24,6 +24,14 @@ const stripCircular = (from, seen?: any) => {
 
 const { pathname } = url.parse(__BACKEND_URL__);
 
+/**
+ * Middleware function that takes 4 arguments is classified as "error handling middleware"
+ * and will only get called if an error occurs.
+ * @param e
+ * @param req
+ * @param res
+ * @param next
+ */
 export const errorMiddleware =
     (e, req, res, next) => {
         if (req.path === pathname) {

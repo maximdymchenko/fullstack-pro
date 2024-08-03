@@ -1,5 +1,5 @@
 import { connection, Connection, ConnectOptions, createConnection, plugin } from 'mongoose';
-import * as _ from 'lodash';
+import { defaultsDeep } from 'lodash-es';
 import { Db } from 'mongodb';
 import { logExecutionTime, LoggerVerbosity } from 'mongoose-execution-time';
 import { logger } from '@cdm-logger/server';
@@ -20,7 +20,7 @@ export class MongoConnector {
     private logger: ILogger;
 
     constructor(uri: string, opts?: ConnectOptions) {
-        this.opts = _.defaultsDeep(opts, {});
+        this.opts = defaultsDeep(opts, {});
         this.uri = uri;
         this.logger = logger.child({ className: 'MongoConnector' });
     }

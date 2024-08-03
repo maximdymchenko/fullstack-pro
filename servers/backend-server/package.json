@@ -77,6 +77,7 @@
         "@sample-stack/counter-module-server": "link:../../packages-modules/counter/server",
         "@sample-stack/platform-server": "link:../../packages/sample-platform/server",
         "@sample-stack/store": "link:../../packages/sample-store",
+        "@sentry/node": "~7.24.2",
         "apollo-datasource": "^3.3.1",
         "apollo-datasource-rest": "^3.3.1",
         "apollo-errors": "^1.9.0",

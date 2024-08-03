@@ -1,13 +1,64 @@
 scalar AnyObject
+scalar Date
+scalar Time
+scalar DateTime
+scalar URI
+scalar URIInput
+scalar Observable
+
 scalar JSON
 scalar JSONObject
+
+directive @cacheControl(maxAge: Int, scope: CacheControlScope) on FIELD_DEFINITION | OBJECT | INTERFACE
+enum CacheControlScope {
+  PUBLIC
+  PRIVATE
+}
+
+"""
+ An object with an ID.
+"""
+interface Node {
+    """
+    The ID of the node.
+    """
+    id: ID!
+}
+
+# Pagination information. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
+type PageInfo {
+    # Whether there is a next page of nodes in the connection.
+    hasNextPage: Boolean!
+}
+
+"""
+ Represents a null return value.
+"""
+type EmptyResponse {
+    # A dummy null value.
+    alwaysNil: String
+}
+
 type FieldError {
   field: String!
   message: String!
 }
 
+input Sort{
+    key: String!,
+    value: SortEnum!,
+}
+
+enum SortEnum{
+    ASC,
+    DESC
+}
+
 type Query {
-    dummy: Int
+    """
+     Looks up a node by ID.
+    """
+    node(id: ID!): Node
 }
 
 type Mutation {
@@ -18,13 +69,28 @@ type Subscription {
     dummy: Int
 }
 
-interface Node {
-      id: ID!
+type AdminIdeSettings {
+    dummy: Int
 }
 
+""" All Moleculer Topic names are extended from this."""
+enum MoleculerServiceName {
+    dummy
+}
+
+interface IResourceUtilizationSettings {
+    subTopic: String
+    adminApiNamespace: String
+}
+
+
+type GeoLocation {
+    coordinates: [Float]
+}
 
 schema {
     query: Query
     mutation: Mutation
     subscription: Subscription
 }
+

@@ -1,6 +1,6 @@
 
 
-import * as _ from 'lodash';
+import { defaultsDeep } from 'lodash-es';
 import { RedisClusterCache, RedisCache } from 'apollo-server-cache-redis';
 import * as IORedis from 'ioredis';
 import { logger } from '@cdm-logger/server';
@@ -21,7 +21,7 @@ export class RedisConnector {
      * @param {object} opts
      */
     constructor(opts?: IORedis.ClusterOptions | IORedis.RedisOptions) {
-        this.opts = _.defaultsDeep(opts, {
+        this.opts = defaultsDeep(opts, {
             prefix: null,
         });
         this.logger = logger.child({ className: 'RedisConnector' });
