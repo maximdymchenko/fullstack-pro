@@ -25,7 +25,7 @@
     },
     "scripts": {
         "prebootstrap": "lerna run prepare",
-        "bootstrap": "yarn && yarn lerna",
+        "bootstrap": "yarn",
         "postbootstrap": "yarn build",
         "build": "yarn build:packages",
         "build:clean": "lerna exec yarn build:clean",
@@ -62,7 +62,6 @@
         "gitcommit": "git add -A && git diff --staged --quiet || git commit -am 'auto publish [skip ci] \r\n'",
         "husky-skip": "cross-env HUSKY_SKIP_HOOKS=1",
         "jest": "./node_modules/.bin/jest",
-        "lerna": "lerna bootstrap",
         "update-lerna-on-develop": "git checkout publish && git pull && cp lerna.json ../lerna-temp.json && git checkout develop && mv ../lerna-temp.json lerna.json && git commit -am 'Update lerna.json' && git push",
         "prelernapublish": "git checkout publish && git pull origin publish  && git merge -s recursive -X theirs master  -m 'merge from master' && yarn gitcommit && node tools/update-dependency-version.js && yarn gitcommit",
         "lernapublish": "lerna publish --ignore-scripts --cd-version=patch && yarn update-lerna-on-develop",
