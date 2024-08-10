@@ -103,14 +103,18 @@
     },
     "lint-staged": {
         "*.md": [
-            "yarn format:md",
-            "git add"
+            "yarn format:md"
         ],
         "*.{js,jsx,ts,tsx}": [
-            "eslint --fix",
-            "git add"
+            "eslint --fix"
         ],
-        "package.json": "sort-package-json  --check package.json */**/package.json "
+        "*.json": [
+            "prettier --write"
+        ],
+        "package.json": [
+            "sort-package-json  --check package.json */**/package.json",
+            "prettier --write"
+        ]
     },
     "resolutions": {
         "@apollo/client": "^3.9.0",
