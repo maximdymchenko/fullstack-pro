@@ -86,7 +86,6 @@ pipeline {
         sh """
           echo "what is docker git version $GIT_BRANCH_NAME -- ${params.ENV_CHOICE}"
           ${params.BUILD_STRATEGY} install
-          ${params.BUILD_STRATEGY} run lerna
         """
       }
     }

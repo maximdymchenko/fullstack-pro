@@ -1,32 +1,20 @@
-/* eslint-disable jest/require-hook */
-/* eslint-disable no-loop-func */
-/* eslint-disable no-undef */
-/* eslint-disable @typescript-eslint/no-var-requires */
-/* eslint-disable @typescript-eslint/no-floating-promises */
-/* eslint-disable no-restricted-syntax */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-shadow */
-/* eslint-disable no-console */
-/* eslint-disable @typescript-eslint/restrict-template-expressions */
-/* eslint-disable consistent-return */
-
-const glob = require('glob');
 const path = require('path');
 const fs = require('fs');
 const simpleGit = require('simple-git');
-const { execSync } = require('child_process');
+const glob = require('glob');
 
 const git = simpleGit();
 const monorepoRoot = path.resolve(__dirname, '..');
 
+// matching prettier format
 const JSON_SPACING = 4;
+const ADD_END_NEWLINE = true; // Set to true to add a newline at the end of the file
+
 const findPackageJsonFiles = () => {
     return new Promise((resolve, reject) => {
         glob(
             `${monorepoRoot}/+(servers|portable-devices|packages|packages-modules)/**/package.json`,
-            { onlyFiles: false, ignore: '**/node_modules/**' },
+            { onlyFiles: true, ignore: '**/node_modules/**' },
             (err, files) => {
                 if (err) reject(`Unable to scan directory: ${err}`);
                 resolve(files);
@@ -53,66 +41,73 @@ const buildPackageMap = async () => {
 };
 
 const searchAndUpdate = (dependencies, filePath, obj, packageMap) => {
-    const packageDir = path.dirname(filePath);
+    let modified = false;
 
     for (const key in dependencies) {
         if (dependencies[key].startsWith('link:')) {
             const relativeDepFolder = dependencies[key].split('link:')[1];
-            const dependencyFolder = path.join(packageDir, relativeDepFolder);
+            const dependencyFolder = path.join(path.dirname(filePath), relativeDepFolder);
 
             try {
                 const packageJsonPath = path.join(dependencyFolder, 'package.json');
                 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-                dependencies[key] = packageJson.version;
-                const str = JSON.stringify(obj, null, JSON_SPACING);
-                fs.writeFileSync(filePath, str, 'utf8');
+                if (dependencies[key] !== packageJson.version) {
+                    dependencies[key] = packageJson.version;
+                    modified = true;
+                }
             } catch (err) {
                 console.error(`Error updating ${key} in ${filePath}: ${err.message}`);
                 throw err;
             }
         } else if (packageMap.has(key)) {
-            dependencies[key] = packageMap.get(key).version;
-            const str = JSON.stringify(obj, null, JSON_SPACING);
-            fs.writeFileSync(filePath, str, 'utf8');
+            const version = packageMap.get(key).version;
+            if (dependencies[key] !== version) {
+                dependencies[key] = version;
+                modified = true;
+            }
         }
     }
+
+    if (modified) {
+        // Write the updated package.json back to disk with or without a newline at the end
+        let formattedJson = JSON.stringify(obj, null, JSON_SPACING);
+        if (ADD_END_NEWLINE) {
+            formattedJson += '\n';
+        }
+        fs.writeFileSync(filePath, formattedJson, 'utf8');
+    }
+
+    return modified;
 };
 
 const updateDependencies = async () => {
     const packageMap = await buildPackageMap();
     const packageJsonFiles = await findPackageJsonFiles();
+    const modifiedFiles = [];
 
     packageJsonFiles.forEach((file) => {
         if (!file.includes('node_modules')) {
-            fs.readFile(file, 'utf-8', (err, data) => {
-                if (err) return console.error(`Unable to read file: ${err}`);
-                try {
-                    const obj = JSON.parse(data);
-                    const { dependencies, peerDependencies, devDependencies } = obj;
-                    searchAndUpdate(dependencies, file, obj, packageMap);
-                    searchAndUpdate(peerDependencies, file, obj, packageMap);
-                    searchAndUpdate(devDependencies, file, obj, packageMap);
-                } catch (err) {
-                    console.error(`Error processing ${file}: ${err.message}`);
+            try {
+                const data = fs.readFileSync(file, 'utf8');
+                const obj = JSON.parse(data);
+                const { dependencies, peerDependencies, devDependencies } = obj;
+
+                let modified = false;
+                modified = searchAndUpdate(dependencies, file, obj, packageMap) || modified;
+                modified = searchAndUpdate(peerDependencies, file, obj, packageMap) || modified;
+                modified = searchAndUpdate(devDependencies, file, obj, packageMap) || modified;
+
+                if (modified) {
+                    modifiedFiles.push(file);
                 }
-            });
+            } catch (err) {
+                console.error(`Unable to read file ${file}: ${err.message}`);
+            }
         }
     });
 
-    try {
-        execSync('npx prettier --write "**/package.json"', { stdio: 'inherit' });
-    } catch (err) {
-        console.error(`Error running prettier: ${err.message}`);
-    }
-
-    await git.add('.');
-    const status = await git.status();
-    console.log('POST GIT CHANGES', status);
-
-    if (status.modified.length) {
-        const fileArray = status.modified.filter((element) => element.includes('package.json'));
-        const addArray = fileArray.map((element) => `./${element}`);
-        await git.add(addArray);
+    if (modifiedFiles.length > 0) {
+        await git.add(modifiedFiles);
         await git.commit('Updated packages to use correct versions and linked dependencies');
     } else {
         console.log('No changes detected');
@@ -121,6 +116,6 @@ const updateDependencies = async () => {
 
 updateDependencies()
     .then(() => {
-        console.log('Dependencies updated done!');
+        console.log('Dependencies updated successfully.');
     })
     .catch((err) => console.error(`Error in updateDependencies: ${err.message}`));
