@@ -9,7 +9,8 @@ import { i18nInternationalizationPlugin } from '@common-stack/rollup-vite-utils/
 import { performCopyOperations } from '@common-stack/rollup-vite-utils/lib/preStartup/configLoader/configLoader.js';
 import { loadEnvConfig } from '@common-stack/rollup-vite-utils/lib/preStartup/configLoader/envLoader.js';
 import { cjsInterop } from 'vite-plugin-cjs-interop';
-import config from './app/cde-webconfig.json'  assert { type: 'json' };
+import { mergeWith } from 'lodash-es';
+import config from './app/cde-webconfig.json' assert { type: 'json' };
 
 // This installs globals such as "fetch", "Response", "Request" and "Headers".
 installGlobals();
@@ -20,7 +21,7 @@ export default defineConfig(({ isSsrBuild }) => {
 
     const dotEnvResult = loadEnvConfig(directoryName);
 
-    return {
+    const viteConfig = {
         define: {
             __ENV__: JSON.stringify(dotEnvResult?.parsed),
             ...Object.assign(
@@ -28,7 +29,7 @@ export default defineConfig(({ isSsrBuild }) => {
                     [k]: typeof v !== 'string' ? v : `"${v.replace(/\\/g, '\\\\')}"`,
                     __SERVER__: true,
                     __CLIENT__: false,
-                }))
+                })),
             ),
         },
         plugins: [
@@ -38,7 +39,7 @@ export default defineConfig(({ isSsrBuild }) => {
                 namespaceResolution: 'basename',
             }),
             cjsInterop({
-                dependencies:["@apollo/client"]
+                dependencies: ['@apollo/client'],
             }),
             remix({
                 appDirectory: 'src',
@@ -48,23 +49,29 @@ export default defineConfig(({ isSsrBuild }) => {
                     }
                     const metaJson = await import('./app/sync-meta.json').catch(() => null);
                     return defineRoutes((routeFn) => {
-                        defineRoutesConfig(routeFn, {
-                            routesFileName: 'routes.json',
-                            packages: config.modules,
-                            paths: config.paths,
-                            rootPath: resolve(directoryName, '../..'),
-                        }, metaJson);
+                        defineRoutesConfig(
+                            routeFn,
+                            {
+                                routesFileName: 'routes.json',
+                                packages: config.modules,
+                                paths: config.paths,
+                                rootPath: resolve(directoryName, '../..'),
+                            },
+                            metaJson,
+                        );
                     });
                 },
             }),
             tsconfigPaths({ ignoreConfigErrors: true }),
         ],
         resolve: {
-            // preserveSymlinks: true,
             alias: {
                 '@app': resolve(__dirname, 'app'),
                 '@src': resolve(__dirname, 'src'),
             },
         },
     };
+
+    // Deep merge custom Vite config from config.json
+    return mergeWith(viteConfig, config.viteConfig);
 });

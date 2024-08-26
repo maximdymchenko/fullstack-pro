@@ -42,7 +42,7 @@ const publicEnv = [
     'REDIRECT_ON_LOGIN_VISIT',
     'ENABLE_COOKIE_BASED_AUTH',
     'APP_DOMAIN',
-    'AUTH_ID_TOKEN_COOKIE_MAX_AGE'
+    'AUTH_ID_TOKEN_COOKIE_MAX_AGE',
 ];
 
 const isBrowser = typeof window !== 'undefined';
@@ -63,12 +63,18 @@ if (isBrowser) {
     process[lowerCase('env')] = env; // to avoid webpack to replace `process` with actual value.
     process.APP_ENV = env;
     window.process = process;
+    // @ts-ignore
     window.__CLIENT__ = true;
+    // @ts-ignore
     window.__SERVER__ = false;
 } else {
+    // @ts-ignore
     global.__CLIENT__ = false;
+    // @ts-ignore
     global.__SERVER__ = true;
+    // @ts-ignore
     __CLIENT__ = false;
+    // @ts-ignore
     __SERVER__ = true;
 }
 try {

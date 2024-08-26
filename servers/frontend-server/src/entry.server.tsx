@@ -3,50 +3,80 @@
  * You are free to delete this file if you'd like to, but if you ever want it revealed again, you can run `npx remix reveal` ✨
  * For more information, see https://remix.run/file-conventions/entry.server
  */
-// @ts-nocheck
-global.__CLIENT__ = false;
-global.__SERVER__ = true;
-import React from 'react';
+import * as React from 'react';
+(global as any).__CLIENT__ = false;
+(global as any).__SERVER__ = true;
 import { PassThrough, Transform } from 'node:stream';
-import type { AppLoadContext, EntryContext } from '@remix-run/node';
+import type { EntryContext } from '@remix-run/node';
 import { createReadableStreamFromReadable } from '@remix-run/node';
 import { RemixServer } from '@remix-run/react';
 import { isbot } from 'isbot';
 import { ApolloProvider } from '@apollo/client/index.js';
 import { SlotFillProvider } from '@common-stack/components-pro';
-import { InversifyProvider, PluginArea } from '@common-stack/client-react';
-import { renderToPipeableStream, renderToString } from 'react-dom/server';
+import { InversifyProvider } from '@common-stack/client-react';
+import { renderToPipeableStream } from 'react-dom/server';
 import { Provider as ReduxProvider } from 'react-redux';
 import { LOCATION_CHANGE } from '@common-stack/remix-router-redux';
 import serialize from 'serialize-javascript';
+import { createCache as createAntdCache, extractStyle, StyleProvider } from '@ant-design/cssinjs';
 import { CacheProvider } from '@emotion/react';
-import createEmotionServer from '@emotion/server/create-instance';
-import Backend from 'i18next-fs-backend';
-import { renderToString } from 'react-dom/server';
-import { renderHeadToString } from 'remix-island';
-import publicEnv from '@src/config/public-config';
-import { I18nextProvider, initReactI18next } from 'react-i18next';
+import { renderStylesToNodeStream } from '@emotion/server';
 import { createInstance } from 'i18next';
+import { I18nextProvider, initReactI18next } from 'react-i18next';
+import Backend from 'i18next-fs-backend';
 import { resolve } from 'node:path';
-// import { renderStylesToNodeStream } from '@emotion/server';
 // @ts-ignore
-import { defaultCache } from '@app/frontend-stack-react/entries/common/createEmotionCache.js';
-// @ts-ignore
-import config from '@app/cde-webconfig.json';
-
-import { Head } from './root';
-import type { IAppLoadContext } from '@common-stack/client-core';
-import { ServerStyleContext } from '@app/frontend-stack-react/entries/chakraui/context.js';
 import { i18nextInstance as i18next } from '@app/frontend-stack-react/i18n-localization/i18next.server.js';
-const { extractCriticalToChunks } = createEmotionServer(defaultCache);
+import config from '@app/cde-webconfig.json';
+// @ts-ignore
+import createEmotionCache from '@app/frontend-stack-react/entries/common/createEmotionCache';
+import type { IAppLoadContext } from '@common-stack/client-core';
 
-const ABORT_DELAY = 5000;
-const COMMON_HEAD = `
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-`;
+const ABORT_DELAY = 5_000;
+const antdCache = createAntdCache();
+const cache = createEmotionCache();
 
-export default function handleRequest(
+class ConstantsTransform extends Transform {
+    _fills: string[];
+    _apolloState: any;
+    _reduxState: any;
+    _styleSheet: string;
+
+    constructor(fills: string[], apolloState: any, reduxState: any, styleSheet: any) {
+        super();
+        this._fills = fills;
+        this._apolloState = apolloState;
+        this._reduxState = reduxState;
+        this._styleSheet = styleSheet;
+    }
+
+    _transform(chunk, encoding, callback) {
+        let transformedChunk = chunk.toString();
+
+        if (transformedChunk.includes('[__APOLLO_STATE__]')) {
+            transformedChunk = transformedChunk.replace(
+                '[__APOLLO_STATE__]',
+                serialize(this._apolloState, { isJSON: true }),
+            );
+        }
+        if (transformedChunk.includes('[__PRELOADED_STATE__]')) {
+            transformedChunk = transformedChunk.replace(
+                '[__PRELOADED_STATE__]',
+                serialize(this._reduxState, { isJSON: true }),
+            );
+        }
+        if (transformedChunk.includes('[__SLOT_FILLS__]')) {
+            transformedChunk = transformedChunk.replace('[__SLOT_FILLS__]', serialize(this._fills, { isJSON: true }));
+        }
+        if (transformedChunk.includes('[__STYLESHEET__]')) {
+            transformedChunk = transformedChunk.replace('[__STYLESHEET__]', this._styleSheet);
+        }
+
+        callback(null, transformedChunk);
+    }
+}
+
+export default async function handleRequest(
     request: Request,
     responseStatusCode: number,
     responseHeaders: Headers,
@@ -54,77 +84,11 @@ export default function handleRequest(
     // This is ignored so we can keep it in the template for visibility.  Feel
     // free to delete this parameter in your app if you're not using it!
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    loadContext: AppLoadContext,
-) {
-    return isbot(request.headers.get('user-agent') || '')
-        ? handleBotRequest(request, responseStatusCode, responseHeaders, remixContext, loadContext)
-        : handleBrowserRequest(request, responseStatusCode, responseHeaders, remixContext, loadContext);
-}
-
-function handleBotRequest(
-    request: Request,
-    responseStatusCode: number,
-    responseHeaders: Headers,
-    remixContext: EntryContext,
-    loadContext: IAppLoadContext,
-) {
-    return new Promise((resolve, reject) => {
-        let shellRendered = false;
-        const { pipe, abort } = renderToPipeableStream(
-            <RemixServer context={remixContext} url={request.url} abortDelay={ABORT_DELAY} />,
-            {
-                onAllReady() {
-                    shellRendered = true;
-
-                    const head = renderHeadToString({ request, remixContext, Head });
-                    const body = new PassThrough();
-
-                    responseHeaders.set('Content-Type', 'text/html');
-                    const stream = createReadableStreamFromReadable(body);
-                    resolve(
-                        new Response(stream, {
-                            headers: responseHeaders,
-                            status: responseStatusCode,
-                        }),
-                    );
-                    body.write(`<!DOCTYPE html><html><head>${COMMON_HEAD}${head}</head><body><div id="root">`);
-                    pipe(body);
-                    body.write(`</div></body></html>`);
-                },
-                onShellError(error: unknown) {
-                    reject(error);
-                },
-                onError(error: unknown) {
-                    responseStatusCode = 500;
-                    // Log streaming rendering errors from inside the shell.  Don't log
-                    // errors encountered during initial shell rendering since they'll
-                    // reject and get logged in handleDocumentRequest.
-                    if (shellRendered) {
-                        console.error(error);
-                    }
-                },
-            },
-        );
-
-        setTimeout(abort, ABORT_DELAY);
-    });
-}
-
-async function handleBrowserRequest(
-    request: Request,
-    responseStatusCode: number,
-    responseHeaders: Headers,
-    remixContext: EntryContext,
     loadContext: IAppLoadContext,
 ) {
     const instance = createInstance();
-
-    // Then we could detect locale from the request
     const lng = await i18next.getLocale(request);
-    // And here we detect what namespaces the routes about to render want to use
     const ns = i18next.getRouteNamespaces(remixContext);
-    const slotFillContext = { fills: {} };
-    const { modules: clientModules, container, apolloClient: client, store }: IAppLoadContext = loadContext;
 
     // First, we create a new instance of i18next so every request will have a
     // completely unique instance and not share any state.
@@ -145,75 +109,30 @@ async function handleBrowserRequest(
             });
     }
 
-    const html = renderToString(
-        <I18nextProvider i18n={instance}>
-            <CacheProvider value={defaultCache}>
-                <ApolloProvider client={client}>
-                    <ReduxProvider store={store}>
-                        <SlotFillProvider context={slotFillContext}>
-                            <InversifyProvider container={container} modules={clientModules}>
-                                <RemixServer context={remixContext} url={request.url} />
-                            </InversifyProvider>
-                        </SlotFillProvider>
-                    </ReduxProvider>
-                </ApolloProvider>
-            </CacheProvider>
-        </I18nextProvider>,
-    );
+    return isbot(request.headers.get('user-agent') || '')
+        ? handleBotRequest(request, responseStatusCode, responseHeaders, remixContext, loadContext, instance)
+        : handleBrowserRequest(request, responseStatusCode, responseHeaders, remixContext, loadContext, instance);
+}
 
-    const chunks = extractCriticalToChunks(html);
-
+function handleBotRequest(
+    request: Request,
+    responseStatusCode: number,
+    responseHeaders: Headers,
+    remixContext: EntryContext,
+    loadContext: IAppLoadContext,
+    i18nInstance: i18next,
+) {
     return new Promise((resolve, reject) => {
         let shellRendered = false;
-
-        const { pathname, search, hash } = new URL(request.url);
-        store.dispatch({
-            type: LOCATION_CHANGE,
-            payload: { location: { pathname, search, hash }, action: 'POP' },
-        });
-
         const { pipe, abort } = renderToPipeableStream(
-            (
-                <I18nextProvider i18n={instance}>
-                    <ServerStyleContext.Provider value={chunks.styles}>
-                        <CacheProvider value={defaultCache}>
-                            <ApolloProvider client={client}>
-                                <ReduxProvider store={store}>
-                                    <SlotFillProvider context={slotFillContext}>
-                                        <InversifyProvider container={container} modules={clientModules}>
-                                            <RemixServer
-                                                context={remixContext}
-                                                url={request.url}
-                                                abortDelay={ABORT_DELAY}
-                                            />
-                                        </InversifyProvider>
-                                    </SlotFillProvider>
-                                </ReduxProvider>
-                            </ApolloProvider>
-                        </CacheProvider>
-                    </ServerStyleContext.Provider>
-                </I18nextProvider>
-            ) as any,
+            <I18nextProvider i18n={i18nInstance}>
+                <RemixServer context={remixContext} url={request.url} abortDelay={ABORT_DELAY} />
+            </I18nextProvider>,
             {
-                onShellReady() {
+                onAllReady() {
                     shellRendered = true;
-                    const head = renderHeadToString({ request, remixContext, Head });
                     const body = new PassThrough();
                     const stream = createReadableStreamFromReadable(body);
-                    const apolloState = { ...client.extract() };
-                    const reduxState = { ...store.getState() };
-                    const fills = Object.keys(slotFillContext.fills);
-                    // const transform = new ConstantsTransform(fills, apolloState, reduxState);
-
-                    let customHead = `<script>window.__ENV__=${JSON.stringify(publicEnv)}</script>`;
-                    customHead += `<script>window.__APOLLO_STATE__=${serialize(apolloState, {
-                        isJSON: true,
-                    })}</script>`;
-                    customHead += `<script>window.__PRELOADED_STATE__=${serialize(reduxState, {
-                        isJSON: true,
-                    })}</script>`;
-                    customHead += `<script>window.__SLOT_FILLS__=${serialize(fills, { isJSON: true })}</script>`;
-                    customHead += `<script>if (global === undefined) { var global = window; }</script>`;
 
                     responseHeaders.set('Content-Type', 'text/html');
 
@@ -223,12 +142,91 @@ async function handleBrowserRequest(
                             status: responseStatusCode,
                         }),
                     );
-                    body.write(
-                        `<!DOCTYPE html><html lng=${lng}><head>${COMMON_HEAD}${customHead}${head}</head><body><div id="root">`,
-                    );
+
                     pipe(body);
-                    body.write(`</div></body></html>`);
-                    // pipe(transform).pipe(renderStylesToNodeStream()).pipe(body);
+                },
+                onShellError(error: unknown) {
+                    reject(error);
+                },
+                onError(error: unknown) {
+                    responseStatusCode = 500;
+                    // Log streaming rendering errors from inside the shell.  Don't log
+                    // errors encountered during initial shell rendering since they'll
+                    // reject and get logged in handleDocumentRequest.
+                    if (shellRendered) {
+                        console.error(error);
+                    }
+                },
+            },
+        );
+
+        setTimeout(abort, ABORT_DELAY);
+    });
+}
+
+function handleBrowserRequest(
+    request: Request,
+    responseStatusCode: number,
+    responseHeaders: Headers,
+    remixContext: EntryContext,
+    loadContext: IAppLoadContext,
+    i18nInstance: i18next,
+) {
+    return new Promise((resolve, reject) => {
+        let shellRendered = false;
+        const slotFillContext = { fills: {} };
+        const { modules: clientModules, container, apolloClient: client, store } = loadContext;
+
+        const { pathname, search, hash } = new URL(request.url);
+        store.dispatch({
+            type: LOCATION_CHANGE,
+            payload: { location: { pathname, search, hash }, action: 'POP' },
+        });
+
+        const { pipe, abort } = renderToPipeableStream(
+            (
+                <I18nextProvider i18n={i18nInstance}>
+                    <CacheProvider value={cache}>
+                        <StyleProvider cache={antdCache}>
+                            <ReduxProvider store={store}>
+                                <SlotFillProvider context={slotFillContext}>
+                                    <InversifyProvider container={container} modules={clientModules as any}>
+                                        <ApolloProvider client={client}>
+                                            <RemixServer
+                                                context={remixContext}
+                                                url={request.url}
+                                                abortDelay={ABORT_DELAY}
+                                            />
+                                        </ApolloProvider>
+                                    </InversifyProvider>
+                                </SlotFillProvider>
+                            </ReduxProvider>
+                        </StyleProvider>
+                    </CacheProvider>
+                </I18nextProvider>
+            ) as any,
+            {
+                onShellReady() {
+                    shellRendered = true;
+                    const body = new PassThrough();
+                    const stream = createReadableStreamFromReadable(body);
+                    const apolloState = { ...client.extract() };
+                    const reduxState = { ...store.getState() };
+                    const fills = Object.keys(slotFillContext.fills);
+                    const styleSheet = extractStyle(antdCache);
+
+                    const transform = new ConstantsTransform(fills, apolloState, reduxState, styleSheet);
+
+                    responseHeaders.set('Content-Type', 'text/html');
+
+                    resolve(
+                        new Response(stream, {
+                            headers: responseHeaders,
+                            status: responseStatusCode,
+                        }),
+                    );
+
+                    pipe(transform).pipe(renderStylesToNodeStream()).pipe(body);
                 },
                 onShellError(error: unknown) {
                     reject(error);
