@@ -30,7 +30,7 @@ pipeline {
     choice choices: ['auto', 'force'], description: 'Choose merge strategy', name: 'NPM_PUBLISH_STRATEGY'
     choice choices: ['yarn', 'npm'], description: 'Choose build strategy', name: 'BUILD_STRATEGY'
     choice choices: ['0.7.9','0.7.7', '0.6.0'], description: 'Choose Idestack chart version', name: 'IDESTACK_CHART_VERSION'
-    choice choices: ['nodejs18', 'nodejs16', 'nodejs14'], description: 'Choose NodeJS version', name: 'NODEJS_TOOL_VERSION'    
+    choice choices: ['nodejs20', 'nodejs18', 'nodejs22'], description: 'Choose NodeJS version', name: 'NODEJS_TOOL_VERSION'    
     choice choices: ['buildOnly', 'buildAndTest', 'buildAndPublish',  'mobileBuild', 'mobilePreview', 'mobilePreviewLocal', 'mobilePreviewSubmit', 'mobileProd', 'mobileProdSubmit', 'devDeployOnly', 'stageDeploy', 'stageDeployOnly', 'prodDeploy', 'prodDeployOnly', 'allenv'], description: 'Where to deploy micro services?', name: 'ENV_CHOICE'
     choice choices: ['all', 'ios', 'android' ], description: 'Mobile type if it is mobile build?', name: 'MOBILE_CHOICE'
     booleanParam (defaultValue: false, description: 'Skip production release approval', name: 'SKIP_RELEASE_APPROVAL')
@@ -38,7 +38,7 @@ pipeline {
     string(name: 'BUILD_TIME_OUT', defaultValue: '120', description: 'Build timeout in minutes', trim: true)
   }
 
- // Setup common + secret key variables for pipeline.
+  // Setup common + secret key variables for pipeline.
   environment {
     BUILD_COMMAND = getBuildCommand()
     NAMESPACE = "${params.BASE_NAMESPACE}-${params.VERSION}"
@@ -98,7 +98,7 @@ pipeline {
         sshagent(credentials: [params.GIT_CREDENTIAL_ID]) {
           sh """
             rm .npmrc
-            lerna exec --scope=*mobile-device ${params.BUILD_STRATEGY} ${env.BUILD_COMMAND}
+            npx lerna exec --scope=*mobile-device ${params.BUILD_STRATEGY} ${env.BUILD_COMMAND}
             git checkout -- .npmrc
             yarn gitcommit
             git pull origin ${params.REPOSITORY_BRANCH}
@@ -144,7 +144,6 @@ pipeline {
           git merge ${env.GIT_PR_BRANCH_NAME} -m 'auto merging ${params.GIT_PR_BRANCH_NAME} \r\n[skip ci]'
           git push origin ${params.DEVELOP_BRANCH}
           ${params.BUILD_STRATEGY} install
-          ${params.BUILD_STRATEGY} run lerna
           ${params.BUILD_STRATEGY} run build
         """
         script {
@@ -277,7 +276,6 @@ pipeline {
           git checkout ${params.REPOSITORY_BRANCH}
           git merge origin/${params.DEVELOP_BRANCH} -m 'auto merging ${params.DEVELOP_BRANCH} \r\n[skip ci]'
           ${params.BUILD_STRATEGY} install
-          ${params.BUILD_STRATEGY} run lerna
         """
         script {
           GIT_BRANCH_NAME = params.REPOSITORY_BRANCH
@@ -647,7 +645,7 @@ def buildAndPushDockerImage(server, name, version) {
     echo "Docker image ${REPOSITORY_SERVER}/${name}:${version} already exists. Skipping build."
   } else {
     sh """
-      lerna exec --scope=*${server} ${params.BUILD_STRATEGY} run docker:${env.BUILD_COMMAND};
+      npx lerna exec --scope=*${server} ${params.BUILD_STRATEGY} run docker:${env.BUILD_COMMAND};
       docker tag ${name}:${version} ${REPOSITORY_SERVER}/${name}:${version}
       docker push ${REPOSITORY_SERVER}/${name}:${version}
       docker rmi ${REPOSITORY_SERVER}/${name}:${version}

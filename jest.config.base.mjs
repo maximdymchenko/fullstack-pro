@@ -1,26 +1,29 @@
 /* eslint-disable import/no-extraneous-dependencies */
 /* eslint-disable @typescript-eslint/no-var-requires */
-const { defaults } = require('jest-config');
+import { defaults } from 'jest-config';
 
 const packagesToTransform = [
     '@apollo/client',
+    '@apollo/server',
+    '@graphql-tools/schema',
+    '@graphql-tools/mock',
     '@common-stack/client-core',
     '@common-stack/client-react',
     '@common-stack/core',
-    '@admin-layout/client',
-    '@common-stack/components-pro',
     '@common-stack/server-core',
     '@common-stack/cache-api-server',
     '@common-stack/remix-router-redux',
-    '@cdmbase/redux-auth-wrapper',
-    '@cdmbase/remix-redis-session',
+    '@common-stack/graphql-api',
+    '@cdmbase/graphql-type-uri',
     '@cdm-logger/server',
     '@cdm-logger/core',
     '@cdm-logger/client',
+    '@files-stack/core',
     '@files-stack/server-core',
     '@vscode-alt/monaco-editor',
     '@workbench-stack/core',
     '@workbench-stack/platform-server',
+    'graphql',
     'abortable-rx',
     'lodash-es',
     'sort-keys',
@@ -41,12 +44,13 @@ const generateTransformIgnorePattern = (packages) => {
 };
 const transformIgnorePattern = generateTransformIgnorePattern(packagesToTransform);
 
-module.exports = {
+export default {
     testEnvironment: 'node',
     setupFiles: [
         // needed for UI to mock canvas load
         // "jest-canvas-mock"
     ],
+    extensionsToTreatAsEsm: ['.ts', '.tsx'],
     preset: 'ts-jest',
     testMatch: null,
     testRegex: '.*test\\.(ts|tsx|js)$',
@@ -55,23 +59,14 @@ module.exports = {
         '\\.(gql)$': 'jest-transform-graphql',
         '\\.(graphql|graphqls)$': '@glen/jest-raw-loader',
         '\\.(ts|tsx)$': 'ts-jest',
-        // Use our custom transformer only for the *.js and *.jsx files
-        '\\.(js|jsx)?$': './transform.js',
+        // // Use our custom transformer only for the *.js and *.jsx files
+        '\\.(js|jsx)?$': './transform.mjs',
         // future need to test with
         //  "^.+\\.(js|jsx|ts|tsx)$": "./transform.js",
         '.+\\.(css|styl|less|sass|scss)$': 'jest-css-modules-transform',
     },
     roots: ['packages', 'packages-modules', 'servers'],
-    moduleFileExtensions: [
-        'tsx', // TODO can be removed as default extension includes
-        'ts', // TODO can be removed as default extension includes
-        ...defaults.moduleFileExtensions,
-        'js', // TODO can be removed as default extension includes
-        'jsx', // TODO can be removed as default extension includes
-        'json',
-        'gql',
-        'graphql',
-    ],
+    moduleFileExtensions: [...defaults.moduleFileExtensions, 'json', 'gql', 'graphql'],
     moduleNameMapper: {
         '^__mocks__/(.*)$': '<rootDir>/../../__mocks__/$1',
         // we'll use commonjs version of lodash for tests 👌
