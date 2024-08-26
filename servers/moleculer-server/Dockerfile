@@ -7,6 +7,10 @@ FROM node:18.20-alpine
 COPY .npmrc /tmp/.npmrc 
 ADD package.json /tmp/package.json
 RUN set -ex \
+  && apk add --no-cache \
+	curl \
+	ca-certificates \
+	build-base \
 	&& cd /tmp \
 	&& yarn config set network-timeout 300000 \
 	&& yarn install \
