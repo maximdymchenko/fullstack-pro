@@ -160,6 +160,8 @@
         "@graphql-codegen/typescript-resolvers": "^4.0.6",
         "@loadable/babel-plugin": "^5.13.2",
         "@loadable/webpack-plugin": "^5.15.2",
+        "@nx-aws-plugin/nx-aws-cache": "^3.2.2",
+        "@nx/workspace": "^19.5.1",
         "@open-wc/building-rollup": "^2.0.2",
         "@pmmmwh/react-refresh-webpack-plugin": "^0.5.8",
         "@redux-devtools/core": "^3.13.1",
