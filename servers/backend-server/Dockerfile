@@ -1,5 +1,5 @@
 # The official nodejs docker image
-FROM node:18.20-bullseye
+FROM node:20.16-bullseye
 
 ENV PYTHON /usr/bin/python
 
@@ -11,6 +11,7 @@ COPY .npmrc /tmp/.npmrc
 ADD package.json /tmp/package.json
 RUN set -ex \
 	&& cd /tmp \
+	&& npm install -g node-gyp \
 	&& yarn config set network-timeout 300000 \
 	&& yarn install \
 	&& rm -f /tmp/.npmrc \

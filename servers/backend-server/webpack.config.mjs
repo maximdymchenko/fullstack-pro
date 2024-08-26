@@ -1,20 +1,25 @@
-process.env.ENV_FILE !== null && require('dotenv').config({ path: process.env.ENV_FILE });
-const webpack = require('webpack');
-const path = require('path');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const nodeExternals = require('webpack-node-externals');
-const NodemonPlugin = require('nodemon-webpack-plugin'); // Ding
-const EnvListPlugin = require('@common-stack/env-list-loader');
-const { writeBackendModuleFile } = require('@common-stack/rollup-vite-utils/lib/utils/utils.cjs');
-const packageConfig = require('./config.json');
-const buildConfig = require('./build.config');
+import 'source-map-support/register.js';
+import webpack from 'webpack';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import CopyWebpackPlugin from 'copy-webpack-plugin';
+import { CleanWebpackPlugin } from 'clean-webpack-plugin';
+import nodeExternals from 'webpack-node-externals';
+import Dotenv from 'dotenv-webpack';
+import NodemonPlugin from 'nodemon-webpack-plugin';
+import EnvListPlugin from '@common-stack/env-list-loader';
+import { writeBackendModuleFile } from '@common-stack/rollup-vite-utils/lib/utils/utils.cjs';
+import buildConfig from './build.config.mjs';
 
 const modulenameExtra = process.env.BUILD_MODULE_TO_INCLUDE ? `${process.env.BUILD_MODULE_TO_INCLUDE}|` : '';
 let modulenameRegex;
 
+// Get the directory name of the current module
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 try {
     modulenameRegex = new RegExp(
-        `(${modulenameExtra}ts-invariant|@common-stack/server-stack|webpack/hot/poll)|(\\.(css|less|scss|png|ico|jpg|gif|xml|woff|woff2|otf|ttf|eot|svg)(\\?[0-9a-z]+)?$)`,
+        `(${modulenameExtra}ts-invariant|webpack/hot/poll)|(\\.(css|less|scss|png|ico|jpg|gif|xml|woff|woff2|otf|ttf|eot|svg)(\\?[0-9a-z]+)?$)`,
     );
     console.log('Module Name Regex: ', modulenameRegex);
 } catch (error) {
@@ -35,10 +40,20 @@ try {
 
 const config = {
     entry: {
-        index: (process.env.NODE_ENV !== 'production' ? ['webpack/hot/poll?200'] : []).concat([
-            // 'raf/polyfill',
-            './src/index.ts',
-        ]),
+        // index: (process.env.NODE_ENV !== 'production' ? ['webpack/hot/poll?200'] : []).concat([
+        //     // 'raf/polyfill',
+        //     './src/index.ts',
+        // ]),
+        server: {
+            import: './src/index.ts',
+            /*
+             * This prevents code-splitting of async imports into separate chunks.
+             * We can't allow that for the server, because Webpack will duplicate
+             * certain modules that must be shared into each chunk (context,
+             * gettext, DBDefs, linkedEntities, ...).
+             */
+            chunkLoading: false,
+        },
     },
     name: 'server',
     module: {
@@ -81,7 +96,7 @@ const config = {
                     { loader: 'less-loader', options: { javascriptEnabled: true, sourceMap: true } },
                 ],
             },
-            { test: /\.graphqls$/, use: { loader: 'raw-loader' } },
+            { test: /\.graphqls/, use: { loader: 'raw-loader' } },
             { test: /\.(graphql|gql)$/, use: [{ loader: 'graphql-tag/loader' }] },
             // {
             //     test: /\.[tj]sx?$/,
@@ -120,10 +135,6 @@ const config = {
         unsafeCache: false,
     },
     resolve: {
-        alias: {
-            // Define your alias here
-            '@src': path.resolve(__dirname, 'src'),
-        },
         symlinks: true,
         cacheWithContext: false,
         unsafeCache: false,
@@ -146,8 +157,12 @@ const config = {
         pathinfo: false,
         filename: 'index.js',
         path: path.join(__dirname, 'dist'),
-        publicPath: '/',
+        // publicPath: '/',
         sourceMapFilename: '[name].[chunkhash].js.map',
+        module: true, // Enable outputting ESM
+        library: {
+            type: 'module', // Specify library target as module
+        },
     },
     devtool: process.env.NODE_ENV === 'production' ? 'nosources-source-map' : 'cheap-module-source-map',
     mode: process.env.NODE_ENV || 'development',
@@ -163,7 +178,6 @@ const config = {
         // The plugin lists the environment that required as well recommendation about the keys used.
         new EnvListPlugin.Plugin(),
         new CleanWebpackPlugin({ cleanOnceBeforeBuildPatterns: ['dist'] }),
-        new webpack.BannerPlugin({ banner: 'require("source-map-support").install();', raw: true, entryOnly: true }),
         new webpack.DefinePlugin(
             Object.assign(
                 ...Object.entries(buildConfig).map(([k, v]) => ({
@@ -180,7 +194,10 @@ const config = {
         //     ],
         // }),
     ]),
-    target: 'node',
+    target: 'node18',
+    experiments: {
+        outputModule: true,
+    },
     externals: [
         nodeExternals(),
         nodeExternals({
@@ -192,7 +209,7 @@ const config = {
         concatenateModules: false,
         minimize: false,
     },
-    node: { __dirname: true, __filename: true },
+    // node: { __dirname: true, __filename: true },
 };
 
-module.exports = config;
+export default config;
